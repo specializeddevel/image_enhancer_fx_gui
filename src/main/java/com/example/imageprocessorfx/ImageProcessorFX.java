@@ -20,6 +20,12 @@ public class ImageProcessorFX extends Application {
     private CheckBox subfoldersCheckBox;
     private ProgressBar progressBar;
     private Process conversionProcess;
+    private Button processButton;
+    private Button browseInputButton;
+    private Button browseOutputButton;
+    private Button closeButton;
+    private Boolean flag = true;
+    private ProgressIndicator progressIndicator;
 
     public static void main(String[] args) {
         launch(args);
@@ -29,31 +35,29 @@ public class ImageProcessorFX extends Application {
     public void start(Stage primaryStage) {
         primaryStage.setTitle("Image Processor with JavaFX");
 
-
-        // Layout principal
+        // Main layout
         VBox layout = new VBox(10);
         layout.setPadding(new Insets(15));
 
-
-        // Campo para la carpeta de entrada
+        // Field for input folder
         HBox inputBox = new HBox(15);
         Label inputLabel = new Label("Input Folder:");
         inputFolderField = new TextField();
         inputFolderField.setPrefWidth(300);
-        Button browseInputButton = new Button("Browse");
+        browseInputButton = new Button("Browse");
         browseInputButton.setOnAction(e -> selectFolder(primaryStage, inputFolderField));
         inputBox.getChildren().addAll(inputLabel, inputFolderField, browseInputButton);
 
-        // Campo para la carpeta de salida
+        // Output folder field
         HBox outputBox = new HBox(10);
         Label outputLabel = new Label("Output Folder:");
         outputFolderField = new TextField();
         outputFolderField.setPrefWidth(300);
-        Button browseOutputButton = new Button("Browse");
+        browseOutputButton = new Button("Browse");
         browseOutputButton.setOnAction(e -> selectFolder(primaryStage, outputFolderField));
         outputBox.getChildren().addAll(outputLabel, outputFolderField, browseOutputButton);
 
-        // Menú desplegable para seleccionar el modelo
+        // Dropdown menu to select model
         HBox modelBox = new HBox(10);
         Label modelLabel = new Label("Model:");
         modelComboBox = new ComboBox<>();
@@ -65,22 +69,27 @@ public class ImageProcessorFX extends Application {
         modelComboBox.getSelectionModel().selectFirst();
         modelBox.getChildren().addAll(modelLabel, modelComboBox);
 
-        // Checkbox para subcarpetas
+        // Checkbox for subfolders
         subfoldersCheckBox = new CheckBox("Process Subfolders");
 
-        // Barra de progreso
+        // PROGRESS BAR
         progressBar = new ProgressBar(0);
         progressBar.setPrefWidth(400);
 
+        //Progress indicator (spinner)
+        progressIndicator = new ProgressIndicator();
+        progressIndicator.setVisible(false); // Oculto inicialmente
+
         HBox bottomButtons = new HBox(10);
-        // Botón para iniciar el procesamiento
-        Button processButton = new Button("Process");
+        // Button to start processing
+        processButton = new Button("Process");
         processButton.setOnAction(e -> processFiles());
 
-        // Botón para cerrar
-        Button closeButton = new Button("Close");
+        // Close button
+        closeButton = new Button("Close");
         closeButton.setOnAction(e -> {
             if (conversionProcess != null && conversionProcess.isAlive()) {
+                this.flag = false;
                 conversionProcess.destroy(); // Termina el proceso si está activo
             }
             Platform.exit(); // Cierra la aplicación
@@ -88,20 +97,20 @@ public class ImageProcessorFX extends Application {
 
         bottomButtons.getChildren().addAll(processButton, closeButton);
 
-        // Agregar todo al layout
-        layout.getChildren().addAll(inputBox, outputBox, modelBox, subfoldersCheckBox, progressBar, bottomButtons);
+        // Add everything to the layout
+        layout.getChildren().addAll(inputBox, outputBox, modelBox, subfoldersCheckBox, progressBar, progressIndicator, bottomButtons);
 
-        // Configurar y mostrar la ventana
-        Scene scene = new Scene(layout, 500, 200);
+        // Configure and display the window
+        Scene scene = new Scene(layout, 500, 250);
         primaryStage.setResizable(false);
         primaryStage.setScene(scene);
         primaryStage.show();
 
         primaryStage.setOnCloseRequest(event -> {
             if (conversionProcess != null && conversionProcess.isAlive()) {
-                conversionProcess.destroy(); // Detiene el proceso
+                conversionProcess.destroy(); // Stop the process
             }
-            Platform.exit(); // Cierra la aplicación
+            Platform.exit();
         });
     }
 
@@ -119,9 +128,6 @@ public class ImageProcessorFX extends Application {
         String model = modelComboBox.getValue();
         boolean processSubfolders = subfoldersCheckBox.isSelected();
 
-
-
-
         if (inputFolder.isEmpty() || outputFolder.isEmpty()) {
             showAlert(Alert.AlertType.ERROR, "Error", "Please select both input and output folders.");
             return;
@@ -133,11 +139,13 @@ public class ImageProcessorFX extends Application {
             return;
         }
 
-
-
         progressBar.setProgress(0);
+        progressIndicator.setVisible(true); // Show the spinner
+        processButton.setDisable(true);
+        browseInputButton.setDisable(true);
+        browseOutputButton.setDisable(true);
 
-        // Procesamiento en un hilo aparte
+        // Processing in a separate thread
         new Thread(() -> {
             try {
                 processFolder(inputDir, new File(outputFolder), model, processSubfolders);
@@ -146,14 +154,20 @@ public class ImageProcessorFX extends Application {
                 e.printStackTrace();
                 showAlert(Alert.AlertType.ERROR, "Error", "An error occurred while processing files.");
             }
-            progressBar.setProgress(1);
+            Platform.runLater(() -> {
+                progressBar.setProgress(1);
+                progressIndicator.setVisible(false); // Hide the spinner
+                processButton.setDisable(false);
+                browseInputButton.setDisable(false);
+                browseOutputButton.setDisable(false);
+            });
         }).start();
     }
 
     private void processFolder(File inputDir, File outputDir, String model, boolean processSubfolders) throws IOException, InterruptedException {
         String currentDir = System.getProperty("user.dir");
 
-        // Rutas completas a los ejecutables
+        // Full paths to executables
         File realesrganExecutable = new File(currentDir, "realesrgan-ncnn-vulkan");
         File cwebpExecutable = new File(currentDir, "cwebp");
 
@@ -169,56 +183,60 @@ public class ImageProcessorFX extends Application {
         int processedFiles = 0;
 
         for (File file : files) {
-            if (file.isFile() && (file.getName().endsWith(".jpg") || file.getName().endsWith(".png") || file.getName().endsWith(".webp"))) {
-                File outputFile = new File(outputDir, file.getName().replaceFirst("\\.[^.]+$", "_mejorado.webp"));
-                File compressedFile = new File(outputDir, file.getName().replaceFirst("\\.[^.]+$", "_mejoradoc.webp"));
+            if (!this.flag) { break; }
+                if (file.isFile() && (file.getName().endsWith(".jpg") || file.getName().endsWith(".png") || file.getName().endsWith(".webp"))) {
+                    File outputFile = new File(outputDir, file.getName().replaceFirst("\\.[^.]+$", "_mejorado.webp"));
+                    File compressedFile = new File(outputDir, file.getName().replaceFirst("\\.[^.]+$", "_mejoradoc.webp"));
 
-                // Ejecutar realesrgan-ncnn-vulkan
-//                new ProcessBuilder(realesrganExecutable.getAbsolutePath(), "-i", file.getAbsolutePath(), "-o", outputFile.getAbsolutePath(), "-n", model, "-f", "webp")
-//                        .inheritIO()
-//                        .start()
-//                        .waitFor();
-                try {
-                    // Configura y ejecuta el proceso
-                    ProcessBuilder realesrganProcessBuilder = new ProcessBuilder(
-                            realesrganExecutable.getAbsolutePath(),
-                            "-i", file.getAbsolutePath(),
-                            "-o", outputFile.getAbsolutePath(),
-                            "-n", model,
-                            "-f", "webp"
-                    );
+                    // Run realsrgan-ncnn-vulkan
+                    try {
+                        // Configure and run the process
+                        ProcessBuilder realesrganProcessBuilder = new ProcessBuilder(
+                                realesrganExecutable.getAbsolutePath(),
+                                "-i", file.getAbsolutePath(),
+                                "-o", outputFile.getAbsolutePath(),
+                                "-n", model,
+                                "-f", "webp"
+                        );
 
-                    // Inicia el proceso y guarda la referencia
-                    conversionProcess = realesrganProcessBuilder.start();
+                        // Start the process and save the reference
+                        conversionProcess = realesrganProcessBuilder.start();
 
-                    // Espera a que el proceso termine (opcional si es necesario)
-                    conversionProcess.waitFor();
+                        // Wait for the process to finish (optional if necessary)
+                        conversionProcess.waitFor();
 
-                } catch (IOException | InterruptedException ex) {
-                    ex.printStackTrace();
-                } finally {
-                    // Limpia la referencia al proceso una vez que finalice
-                    conversionProcess = null;
+                        ProcessBuilder cwebpProcessBuilder = new ProcessBuilder(
+                                cwebpExecutable.getAbsolutePath(),
+                                "-q", "80",
+                                outputFile.getAbsolutePath(),
+                                "-o", compressedFile.getAbsolutePath()
+                        );
+
+                                conversionProcess = cwebpProcessBuilder.start();
+
+                        conversionProcess.waitFor();
+
+                    } catch (IOException | InterruptedException ex) {
+                        ex.printStackTrace();
+                    } finally {
+                        // Clear the reference to the process once it finishes
+                        conversionProcess = null;
+                    }
+
+
+
+                // Delete temporary file
+                outputFile.delete();
+
+                // Update progress bar
+                    processedFiles++;
+                    double progress = (double) processedFiles / totalFiles;
+                    updateProgress(progress);
+
+
+                } else if (processSubfolders && file.isDirectory()) {
+                    processFolder(file, new File(outputDir, file.getName()), model, true);
                 }
-
-                // Ejecutar cwebp
-//                new ProcessBuilder(cwebpExecutable.getAbsolutePath(), "-q", "80", outputFile.getAbsolutePath(), "-o", compressedFile.getAbsolutePath())
-//                        .inheritIO()
-//                        .start()
-//                        .waitFor();
-//
-//                // Eliminar archivo temporal
-//                outputFile.delete();
-
-                // Actualizar barra de progreso
-                processedFiles++;
-                double progress = (double) processedFiles / totalFiles;
-                updateProgress(progress);
-
-
-            } else if (processSubfolders && file.isDirectory()) {
-                processFolder(file, new File(outputDir, file.getName()), model, true);
-            }
         }
     }
 
