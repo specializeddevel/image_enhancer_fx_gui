@@ -63,8 +63,11 @@ public class ImageProcessorFX extends Application {
         modelComboBox = new ComboBox<>();
         modelComboBox.getItems().addAll(
                 "realesrgan-x4plus",
+                "realesrnet-x4plus",
+                "realesrgan-x4plus-anime",
                 "realesr-animevideov3",
-                "realesrnet-x4plus"
+                "realesr-animevideov3-x2",
+                "realesr-animevideov3-x4"
         );
         modelComboBox.getSelectionModel().selectFirst();
         modelBox.getChildren().addAll(modelLabel, modelComboBox);
@@ -167,10 +170,26 @@ public class ImageProcessorFX extends Application {
     private void processFolder(File inputDir, File outputDir, String model, boolean processSubfolders) throws IOException, InterruptedException {
         String currentDir = System.getProperty("user.dir");
 
-        // Full paths to executables
-        File realesrganExecutable = new File(currentDir, "realesrgan-ncnn-vulkan");
-        File cwebpExecutable = new File(currentDir, "cwebp");
+        String osName = System.getProperty("os.name").toLowerCase();
+        String osArch = System.getProperty("os.arch");
+        File realesrganExecutable;
+        File cwebpExecutable;
 
+        // Full paths to executables for each OS
+        if (osName.contains("win")) {
+            realesrganExecutable = new File(currentDir, "realesrgan-ncnn-vulkan.exe");
+            cwebpExecutable = new File(currentDir, "cwebp.exe");
+        } else if (osName.contains("mac")) {
+            realesrganExecutable = new File(currentDir, "realesrgan-ncnn-vulkan-mac");
+            cwebpExecutable = new File(currentDir, "cwebp-mac");
+        } else if (osName.contains("nix") || osName.contains("nux") || osName.contains("aix")) {
+            realesrganExecutable = new File(currentDir, "realesrgan-ncnn-vulkan");
+            cwebpExecutable = new File(currentDir, "cwebp");
+        } else {
+            System.out.println("Unknown operating system");
+            conversionProcess = null;
+            return;
+        }
 
         if (!outputDir.exists()) {
             outputDir.mkdirs();
@@ -222,8 +241,6 @@ public class ImageProcessorFX extends Application {
                         // Clear the reference to the process once it finishes
                         conversionProcess = null;
                     }
-
-
 
                 // Delete temporary file
                 outputFile.delete();
