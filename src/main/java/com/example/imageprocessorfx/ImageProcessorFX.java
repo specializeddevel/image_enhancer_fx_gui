@@ -76,8 +76,9 @@ public class ImageProcessorFX extends Application {
         subfoldersCheckBox = new CheckBox("Process Subfolders");
 
         // PROGRESS BAR
-        progressBar = new ProgressBar(0);
+        progressBar = new ProgressBar(50);
         progressBar.setPrefWidth(400);
+        progressBar.setPrefHeight(50);
 
         //Progress indicator (spinner)
         progressIndicator = new ProgressIndicator();
