@@ -182,6 +182,10 @@ public class ImageProcessorFX extends Application {
                 processButton.setDisable(false);
                 browseInputButton.setDisable(false);
                 browseOutputButton.setDisable(false);
+                upsaceleCheckBox.setDisable(false);
+                convertToWebpCheckBox.setDisable(false);
+                subfoldersCheckBox.setDisable(false);
+                modelComboBox.setDisable(false);
             });
         }).start();
     }
