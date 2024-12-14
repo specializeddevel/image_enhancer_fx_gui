@@ -18,6 +18,8 @@ public class ImageProcessorFX extends Application {
     private TextField outputFolderField;
     private ComboBox<String> modelComboBox;
     private CheckBox subfoldersCheckBox;
+    private CheckBox convertToWebpCheckBox;
+    private CheckBox upsaceleCheckBox;
     private ProgressBar progressBar;
     private Process conversionProcess;
     private Button processButton;
@@ -44,6 +46,7 @@ public class ImageProcessorFX extends Application {
         Label inputLabel = new Label("Input Folder:");
         inputFolderField = new TextField();
         inputFolderField.setPrefWidth(300);
+        inputFolderField.setEditable(false);
         browseInputButton = new Button("Browse");
         browseInputButton.setOnAction(e -> selectFolder(primaryStage, inputFolderField));
         inputBox.getChildren().addAll(inputLabel, inputFolderField, browseInputButton);
@@ -53,6 +56,7 @@ public class ImageProcessorFX extends Application {
         Label outputLabel = new Label("Output Folder:");
         outputFolderField = new TextField();
         outputFolderField.setPrefWidth(300);
+        outputFolderField.setEditable(false);
         browseOutputButton = new Button("Browse");
         browseOutputButton.setOnAction(e -> selectFolder(primaryStage, outputFolderField));
         outputBox.getChildren().addAll(outputLabel, outputFolderField, browseOutputButton);
@@ -73,16 +77,26 @@ public class ImageProcessorFX extends Application {
         modelBox.getChildren().addAll(modelLabel, modelComboBox);
 
         // Checkbox for subfolders
+        HBox checkBoxes = new HBox(10);
         subfoldersCheckBox = new CheckBox("Process Subfolders");
+        upsaceleCheckBox = new CheckBox("Upscale 4x");
+        upsaceleCheckBox.setSelected(true);
+        convertToWebpCheckBox = new CheckBox("Convert to Webp");
+        convertToWebpCheckBox.setSelected(true);
+        checkBoxes.getChildren().addAll(subfoldersCheckBox, upsaceleCheckBox, convertToWebpCheckBox);
 
+        HBox progressBox = new HBox(10);
         // PROGRESS BAR
         progressBar = new ProgressBar(50);
         progressBar.setPrefWidth(400);
-        progressBar.setPrefHeight(50);
+        progressBar.setPrefHeight(30);
 
         //Progress indicator (spinner)
         progressIndicator = new ProgressIndicator();
+        progressIndicator.setPrefWidth(30);
+        progressIndicator.setPrefHeight(30);
         progressIndicator.setVisible(false); // Oculto inicialmente
+        progressBox.getChildren().addAll(progressBar, progressIndicator);
 
         HBox bottomButtons = new HBox(10);
         // Button to start processing
@@ -102,10 +116,10 @@ public class ImageProcessorFX extends Application {
         bottomButtons.getChildren().addAll(processButton, closeButton);
 
         // Add everything to the layout
-        layout.getChildren().addAll(inputBox, outputBox, modelBox, subfoldersCheckBox, progressBar, progressIndicator, bottomButtons);
+        layout.getChildren().addAll(inputBox, outputBox, modelBox, checkBoxes, progressBox, bottomButtons);
 
         // Configure and display the window
-        Scene scene = new Scene(layout, 500, 250);
+        Scene scene = new Scene(layout, 490, 220);
         primaryStage.setResizable(false);
         primaryStage.setScene(scene);
         primaryStage.show();
@@ -148,6 +162,10 @@ public class ImageProcessorFX extends Application {
         processButton.setDisable(true);
         browseInputButton.setDisable(true);
         browseOutputButton.setDisable(true);
+        upsaceleCheckBox.setDisable(true);
+        convertToWebpCheckBox.setDisable(true);
+        subfoldersCheckBox.setDisable(true);
+        modelComboBox.setDisable(true);
 
         // Processing in a separate thread
         new Thread(() -> {
@@ -175,6 +193,8 @@ public class ImageProcessorFX extends Application {
         String osArch = System.getProperty("os.arch");
         File realesrganExecutable;
         File cwebpExecutable;
+        boolean convertToWebp = convertToWebpCheckBox.isSelected();
+        boolean upscalePicture = upsaceleCheckBox.isSelected();
 
         // Full paths to executables for each OS
         if (osName.contains("win")) {
@@ -205,36 +225,48 @@ public class ImageProcessorFX extends Application {
         for (File file : files) {
             if (!this.flag) { break; }
                 if (file.isFile() && (file.getName().endsWith(".jpg") || file.getName().endsWith(".png") || file.getName().endsWith(".webp"))) {
-                    File outputFile = new File(outputDir, file.getName().replaceFirst("\\.[^.]+$", "_mejorado.webp"));
-                    File compressedFile = new File(outputDir, file.getName().replaceFirst("\\.[^.]+$", "_mejoradoc.webp"));
+                    File outputFile = new File(outputDir, file.getName().replaceFirst("\\.[^.]+$", "_improved.png"));
+                    File compressedFile = new File(outputDir, file.getName().replaceFirst("\\.[^.]+$", "_final.webp"));
 
                     // Run realsrgan-ncnn-vulkan
                     try {
-                        // Configure and run the process
-                        ProcessBuilder realesrganProcessBuilder = new ProcessBuilder(
-                                realesrganExecutable.getAbsolutePath(),
-                                "-i", file.getAbsolutePath(),
-                                "-o", outputFile.getAbsolutePath(),
-                                "-n", model,
-                                "-f", "webp"
-                        );
+                        if(upscalePicture) {
+                            // Configure and run the process
+                            ProcessBuilder realesrganProcessBuilder = new ProcessBuilder(
+                                    realesrganExecutable.getAbsolutePath(),
+                                    "-i", file.getAbsolutePath(),
+                                    "-o", outputFile.getAbsolutePath(),
+                                    "-n", model,
+                                    "-f", "png"
+                            );
 
-                        // Start the process and save the reference
-                        conversionProcess = realesrganProcessBuilder.start();
+                            // Start the process and save the reference
+                            conversionProcess = realesrganProcessBuilder.start();
 
-                        // Wait for the process to finish (optional if necessary)
-                        conversionProcess.waitFor();
+                            // Wait for the process to finish (optional if necessary)
+                            conversionProcess.waitFor();
+                        }
+                        if (convertToWebp) {
+                            ProcessBuilder cwebpProcessBuilder;
+                            if (upscalePicture) {
+                                cwebpProcessBuilder = new ProcessBuilder(
+                                        cwebpExecutable.getAbsolutePath(),
+                                        "-q", "80",
+                                        outputFile.getAbsolutePath(),
+                                        "-o", compressedFile.getAbsolutePath()
+                                );
+                            } else {
+                                 cwebpProcessBuilder = new ProcessBuilder(
+                                        cwebpExecutable.getAbsolutePath(),
+                                        "-q", "80",
+                                        file.getAbsolutePath(),
+                                        "-o", compressedFile.getAbsolutePath()
+                                );
+                            }
+                            conversionProcess = cwebpProcessBuilder.start();
 
-                        ProcessBuilder cwebpProcessBuilder = new ProcessBuilder(
-                                cwebpExecutable.getAbsolutePath(),
-                                "-q", "80",
-                                outputFile.getAbsolutePath(),
-                                "-o", compressedFile.getAbsolutePath()
-                        );
-
-                                conversionProcess = cwebpProcessBuilder.start();
-
-                        conversionProcess.waitFor();
+                            conversionProcess.waitFor();
+                        }
 
                     } catch (IOException | InterruptedException ex) {
                         ex.printStackTrace();
@@ -243,8 +275,11 @@ public class ImageProcessorFX extends Application {
                         conversionProcess = null;
                     }
 
-                // Delete temporary file
-                outputFile.delete();
+                    if ((!upscalePicture && convertToWebp) || (upscalePicture && convertToWebp)) {
+                        // Delete temporary file
+                        outputFile.delete();
+                    }
+
 
                 // Update progress bar
                     processedFiles++;
