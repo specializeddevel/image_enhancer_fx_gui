@@ -8,8 +8,11 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.geometry.Insets;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 
 public class ImageProcessorFX extends Application {
@@ -20,6 +23,7 @@ public class ImageProcessorFX extends Application {
     private CheckBox subfoldersCheckBox;
     private CheckBox convertToWebpCheckBox;
     private CheckBox upsaceleCheckBox;
+    private CheckBox showPreviewCheckBox;
     private ProgressBar progressBar;
     private Process conversionProcess;
     private Button processButton;
@@ -28,6 +32,7 @@ public class ImageProcessorFX extends Application {
     private Button closeButton;
     private Boolean flag = true;
     private ProgressIndicator progressIndicator;
+    private ImageView imageView;
 
     public static void main(String[] args) {
         launch(args);
@@ -35,11 +40,23 @@ public class ImageProcessorFX extends Application {
 
     @Override
     public void start(Stage primaryStage) {
+
+        int verticalsize = 220;
+        int horizontalsize = 0;
+
         primaryStage.setTitle("Image Processor with JavaFX");
 
         // Main layout
-        VBox layout = new VBox(10);
-        layout.setPadding(new Insets(15));
+        HBox layout = new HBox(10);
+        layout.setPadding(new Insets(5));
+
+        VBox layout1 = new VBox(10);
+        layout1.setPadding(new Insets(5));
+
+        VBox layout2 = new VBox(10);
+        layout2.setPadding(new Insets(5));
+
+
 
         // Field for input folder
         HBox inputBox = new HBox(15);
@@ -49,8 +66,14 @@ public class ImageProcessorFX extends Application {
         inputFolderField.setEditable(false);
         browseInputButton = new Button("Browse");
         browseInputButton.setOnAction(e -> selectFolder(primaryStage, inputFolderField));
-        inputBox.getChildren().addAll(inputLabel, inputFolderField, browseInputButton);
 
+
+        imageView = new ImageView();
+        imageView.setFitWidth(100);
+        imageView.setFitHeight(150);
+        imageView.setPreserveRatio(true);
+
+        inputBox.getChildren().addAll(inputLabel, inputFolderField, browseInputButton);
         // Output folder field
         HBox outputBox = new HBox(10);
         Label outputLabel = new Label("Output Folder:");
@@ -83,7 +106,9 @@ public class ImageProcessorFX extends Application {
         upsaceleCheckBox.setSelected(true);
         convertToWebpCheckBox = new CheckBox("Convert to Webp");
         convertToWebpCheckBox.setSelected(true);
-        checkBoxes.getChildren().addAll(subfoldersCheckBox, upsaceleCheckBox, convertToWebpCheckBox);
+        showPreviewCheckBox = new CheckBox("Preview");
+        showPreviewCheckBox.setSelected(true);
+        checkBoxes.getChildren().addAll(subfoldersCheckBox, upsaceleCheckBox, convertToWebpCheckBox, showPreviewCheckBox);
 
         HBox progressBox = new HBox(10);
         // PROGRESS BAR
@@ -116,10 +141,23 @@ public class ImageProcessorFX extends Application {
         bottomButtons.getChildren().addAll(processButton, closeButton);
 
         // Add everything to the layout
-        layout.getChildren().addAll(inputBox, outputBox, modelBox, checkBoxes, progressBox, bottomButtons);
+        layout1.getChildren().addAll(inputBox, outputBox, modelBox, checkBoxes, progressBox, bottomButtons);
+        layout2.getChildren().addAll(imageView);
+
+        layout.getChildren().addAll(layout1, layout2);
+
 
         // Configure and display the window
-        Scene scene = new Scene(layout, 490, 220);
+
+        if(showPreviewCheckBox.isSelected()){
+            horizontalsize=600;
+
+        } else {
+            horizontalsize=480;
+
+        }
+
+        Scene scene = new Scene(layout, horizontalsize, verticalsize);
         primaryStage.setResizable(false);
         primaryStage.setScene(scene);
         primaryStage.show();
@@ -234,6 +272,14 @@ public class ImageProcessorFX extends Application {
 
                     // Run realsrgan-ncnn-vulkan
                     try {
+
+                        if (showPreviewCheckBox.isSelected()) {
+                            FileInputStream input = new FileInputStream(file.getAbsolutePath());
+                            Image image = new Image(input);
+                            imageView.setImage(image);
+                            input.close();
+                        }
+
                         if(upscalePicture) {
                             // Configure and run the process
                             ProcessBuilder realesrganProcessBuilder = new ProcessBuilder(
