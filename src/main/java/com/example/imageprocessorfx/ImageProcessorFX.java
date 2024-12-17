@@ -17,6 +17,8 @@ import java.io.IOException;
 
 public class ImageProcessorFX extends Application {
 
+    private VBox layout1, layout2;
+    private HBox layout;
     private TextField inputFolderField;
     private TextField outputFolderField;
     private ComboBox<String> modelComboBox;
@@ -34,6 +36,11 @@ public class ImageProcessorFX extends Application {
     private ProgressIndicator progressIndicator;
     private ImageView imageView;
 
+    private Stage stage;
+
+    private int verticalsize = 220;
+    private int horizontalsize = 0;
+
     public static void main(String[] args) {
         launch(args);
     }
@@ -41,19 +48,20 @@ public class ImageProcessorFX extends Application {
     @Override
     public void start(Stage primaryStage) {
 
-        int verticalsize = 220;
-        int horizontalsize = 0;
+        stage = primaryStage;
+
 
         primaryStage.setTitle("Image Processor with JavaFX");
 
         // Main layout
-        HBox layout = new HBox(10);
+        layout = new HBox(10);
         layout.setPadding(new Insets(5));
 
-        VBox layout1 = new VBox(10);
+
+        layout1 = new VBox(10);
         layout1.setPadding(new Insets(5));
 
-        VBox layout2 = new VBox(10);
+        layout2 = new VBox(10);
         layout2.setPadding(new Insets(5));
 
 
@@ -108,7 +116,22 @@ public class ImageProcessorFX extends Application {
         convertToWebpCheckBox.setSelected(true);
         showPreviewCheckBox = new CheckBox("Preview");
         showPreviewCheckBox.setSelected(true);
+        showPreviewCheckBox.setOnAction( e -> {
+            if(showPreviewCheckBox.isSelected()) {
+                layout.getChildren().add(layout2);
+                primaryStage.setWidth(620);
+            } else {
+                layout.getChildren().remove(layout2);
+                primaryStage.setWidth(490);
+            }
+
+        });
+
+
+
         checkBoxes.getChildren().addAll(subfoldersCheckBox, upsaceleCheckBox, convertToWebpCheckBox, showPreviewCheckBox);
+
+
 
         HBox progressBox = new HBox(10);
         // PROGRESS BAR
@@ -273,12 +296,21 @@ public class ImageProcessorFX extends Application {
                     // Run realsrgan-ncnn-vulkan
                     try {
 
+
                         if (showPreviewCheckBox.isSelected()) {
                             FileInputStream input = new FileInputStream(file.getAbsolutePath());
                             Image image = new Image(input);
                             imageView.setImage(image);
                             input.close();
+                            verticalsize=600;
+
+                        } else {
+
+
+
+                            verticalsize=480;
                         }
+                        //stage.setWidth(verticalsize);
 
                         if(upscalePicture) {
                             // Configure and run the process
