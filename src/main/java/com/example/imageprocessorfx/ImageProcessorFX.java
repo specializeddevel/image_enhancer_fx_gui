@@ -126,12 +126,7 @@ public class ImageProcessorFX extends Application {
             }
 
         });
-
-
-
         checkBoxes.getChildren().addAll(subfoldersCheckBox, upsaceleCheckBox, convertToWebpCheckBox, showPreviewCheckBox);
-
-
 
         HBox progressBox = new HBox(10);
         // PROGRESS BAR
@@ -158,7 +153,7 @@ public class ImageProcessorFX extends Application {
                 this.flag = false;
                 conversionProcess.destroy(); // Termina el proceso si está activo
             }
-            Platform.exit(); // Cierra la aplicación
+            System.exit(0); // Cierra la aplicación
         });
 
         bottomButtons.getChildren().addAll(processButton, closeButton);
@@ -189,7 +184,7 @@ public class ImageProcessorFX extends Application {
             if (conversionProcess != null && conversionProcess.isAlive()) {
                 conversionProcess.destroy(); // Stop the process
             }
-            Platform.exit();
+            System.exit(0);
         });
     }
 
