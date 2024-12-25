@@ -173,10 +173,10 @@ public class ImageProcessorFX extends Application {
         // Configure and display the window
 
         if(showPreviewCheckBox.isSelected()){
-            horizontalsize=600;
+            horizontalsize=620;
 
         } else {
-            horizontalsize=480;
+            horizontalsize=490;
 
         }
 
@@ -289,7 +289,7 @@ public class ImageProcessorFX extends Application {
 
         for (File file : files) {
             if (!this.flag) { break; }
-                if (file.isFile() && (file.getName().endsWith(".jpg") || file.getName().endsWith(".png") || file.getName().endsWith(".webp"))) {
+                if (file.isFile() && (file.getName().endsWith(".jpg") || file.getName().endsWith(".JPG") || file.getName().endsWith(".jpeg") || file.getName().endsWith(".png") || file.getName().endsWith(".webp"))) {
                     File outputFile = new File(outputDir, file.getName().replaceFirst("\\.[^.]+$", "_improved.png"));
                     File compressedFile = new File(outputDir, file.getName().replaceFirst("\\.[^.]+$", "_final.webp"));
 
@@ -297,20 +297,11 @@ public class ImageProcessorFX extends Application {
                     try {
 
 
-                        if (showPreviewCheckBox.isSelected()) {
                             FileInputStream input = new FileInputStream(file.getAbsolutePath());
                             Image image = new Image(input);
                             imageView.setImage(image);
                             input.close();
-                            verticalsize=600;
 
-                        } else {
-
-
-
-                            verticalsize=480;
-                        }
-                        //stage.setWidth(verticalsize);
 
                         if(upscalePicture) {
                             // Configure and run the process
