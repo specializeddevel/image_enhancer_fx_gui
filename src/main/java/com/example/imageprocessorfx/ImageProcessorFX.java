@@ -115,7 +115,7 @@ public class ImageProcessorFX extends Application {
         convertToWebpCheckBox = new CheckBox("Convert to Webp");
         convertToWebpCheckBox.setSelected(true);
         showPreviewCheckBox = new CheckBox("Preview");
-        showPreviewCheckBox.setSelected(true);
+        showPreviewCheckBox.setSelected(false);
         showPreviewCheckBox.setOnAction( e -> {
             if(showPreviewCheckBox.isSelected()) {
                 layout.getChildren().add(layout2);
@@ -162,8 +162,9 @@ public class ImageProcessorFX extends Application {
         layout1.getChildren().addAll(inputBox, outputBox, modelBox, checkBoxes, progressBox, bottomButtons);
         layout2.getChildren().addAll(imageView);
 
-        layout.getChildren().addAll(layout1, layout2);
-
+        if (showPreviewCheckBox.isSelected())
+            layout.getChildren().addAll(layout1, layout2); else
+                layout.getChildren().addAll(layout1);
 
         // Configure and display the window
 
@@ -284,7 +285,7 @@ public class ImageProcessorFX extends Application {
 
         for (File file : files) {
             if (!this.flag) { break; }
-                if (file.isFile() && (file.getName().endsWith(".jpg") || file.getName().endsWith(".png") || file.getName().endsWith(".webp"))) {
+            if (file.isFile() && (file.getName().endsWith(".jpg") || file.getName().endsWith(".JPG") || file.getName().endsWith(".jpeg") || file.getName().endsWith(".png") || file.getName().endsWith(".webp"))) {
                     File outputFile = new File(outputDir, file.getName().replaceFirst("\\.[^.]+$", "_improved.png"));
                     File compressedFile = new File(outputDir, file.getName().replaceFirst("\\.[^.]+$", "_final.webp"));
 
