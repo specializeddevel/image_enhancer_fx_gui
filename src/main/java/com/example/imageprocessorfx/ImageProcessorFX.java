@@ -253,7 +253,8 @@ public class ImageProcessorFX extends Application {
                 modelComboBox.setDisable(false);
                 closeButton.setText("Exit");
                 textCurrentFolder.setText("Current Folder:");
-                textCurrentFile.setText("Current File:");
+                updateProgress(0);
+                imageView.setImage(null);
             });
         }).start();
     }
@@ -295,81 +296,78 @@ public class ImageProcessorFX extends Application {
 
         textCurrentFolder.setText("Current Folder: " + inputDir.getAbsolutePath());
 
+
         for (File file : files) {
             if (!this.flag) { break; }
-            if (file.isFile() && (file.getName().endsWith(".jpg") || file.getName().endsWith(".JPG") || file.getName().endsWith(".jpeg") || file.getName().endsWith(".png") || file.getName().endsWith(".webp"))) {
+
+            if (file.isFile() && (file.getName().endsWith(".jpg") || file.getName().endsWith(".JPG")
+                    || file.getName().endsWith(".jpeg") || file.getName().endsWith(".png") || file.getName().endsWith(".webp"))) {
+
                 File outputFile = new File(outputDir, file.getName().replaceFirst("\\.[^.]+$", "_improved.png"));
-                    File compressedFile = new File(outputDir, file.getName().replaceFirst("\\.[^.]+$", "_final.webp"));
-                textCurrentFile.setText("Current File: " + file.getName());
-                    // Run realsrgan-ncnn-vulkan
-                    try {
-                        if (showPreviewCheckBox.isSelected()) {
-                            imageView.setImage(null);
-                            FileInputStream input = new FileInputStream(file.getAbsolutePath());
-                            Image image = new Image(input);
-                            imageView.setImage(image);
-                            input.close();
-                        }
-                        if(upscalePicture) {
-                            // Configure and run the process
-                            ProcessBuilder realesrganProcessBuilder = new ProcessBuilder(
-                                    realesrganExecutable.getAbsolutePath(),
-                                    "-i", file.getAbsolutePath(),
-                                    "-o", outputFile.getAbsolutePath(),
-                                    "-n", model,
-                                    "-f", "png"
-                            );
+                File compressedFile = new File(outputDir, file.getName().replaceFirst("\\.[^.]+$", "_final.webp"));
+                textCurrentFile.setText("Current File: " + file.getName() + " Progress/Total Files: " + (processedFiles+1) + "/" + totalFiles);
 
-                            // Start the process and save the reference
-                            conversionProcess = realesrganProcessBuilder.start();
-
-                            // Wait for the process to finish (optional if necessary)
-                            conversionProcess.waitFor();
-                        }
-                        if (convertToWebp) {
-                            ProcessBuilder cwebpProcessBuilder;
-                            if (upscalePicture) {
-                                cwebpProcessBuilder = new ProcessBuilder(
-                                        cwebpExecutable.getAbsolutePath(),
-                                        "-q", "80",
-                                        outputFile.getAbsolutePath(),
-                                        "-o", compressedFile.getAbsolutePath()
-                                );
-                            } else {
-                                 cwebpProcessBuilder = new ProcessBuilder(
-                                        cwebpExecutable.getAbsolutePath(),
-                                        "-q", "80",
-                                        file.getAbsolutePath(),
-                                        "-o", compressedFile.getAbsolutePath()
-                                );
-                            }
-                            conversionProcess = cwebpProcessBuilder.start();
-
-                            conversionProcess.waitFor();
-                        }
-
-                    } catch (IOException | InterruptedException ex) {
-                        ex.printStackTrace();
-                    } finally {
-                        // Clear the reference to the process once it finishes
-                        conversionProcess = null;
+                try {
+                    if (showPreviewCheckBox.isSelected()) {
+                        imageView.setImage(null);
+                        FileInputStream input = new FileInputStream(file.getAbsolutePath());
+                        Image image = new Image(input);
+                        imageView.setImage(image);
+                        input.close();
                     }
 
+                    if(upscalePicture) {
+                        // Configure and run the process
+                        ProcessBuilder realesrganProcessBuilder = new ProcessBuilder(
+                                realesrganExecutable.getAbsolutePath(),
+                                "-i", file.getAbsolutePath(),
+                                "-o", outputFile.getAbsolutePath(),
+                                "-n", model,
+                                "-f", "png"
+                        );
+                        // Start the process and save the reference
+                        conversionProcess = realesrganProcessBuilder.start();
+                        // Wait for the process to finish (optional if necessary)
+                        conversionProcess.waitFor();
+                    }
+
+                    if (convertToWebp) {
+                        ProcessBuilder cwebpProcessBuilder;
+                        if (upscalePicture) {
+                            cwebpProcessBuilder = new ProcessBuilder(
+                                    cwebpExecutable.getAbsolutePath(),
+                                    "-q", "80",
+                                    outputFile.getAbsolutePath(),
+                                    "-o", compressedFile.getAbsolutePath()
+                            );
+                        } else {
+                            cwebpProcessBuilder = new ProcessBuilder(
+                                    cwebpExecutable.getAbsolutePath(),
+                                    "-q", "80",
+                                    file.getAbsolutePath(),
+                                    "-o", compressedFile.getAbsolutePath()
+                            );
+                        }
+                        conversionProcess = cwebpProcessBuilder.start();
+                        conversionProcess.waitFor();
+                    }
                     if ((!upscalePicture && convertToWebp) || (upscalePicture && convertToWebp)) {
                         // Delete temporary file
                         outputFile.delete();
                     }
-
-
-                // Update progress bar
-                    processedFiles++;
-                    double progress = (double) processedFiles / totalFiles;
-                    updateProgress(progress);
-
-
-                } else if (processSubfolders && file.isDirectory()) {
-                    processFolder(file, new File(outputDir, file.getName()), model, true);
+                } catch (IOException | InterruptedException ex) {
+                    ex.printStackTrace();
+                } finally {
+                    // Clear the reference to the process once it finishes
+                    conversionProcess = null;
                 }
+                // Update progress bar
+                processedFiles++;
+                double progress = (double) processedFiles / totalFiles;
+                updateProgress(progress);
+            } else if (processSubfolders && file.isDirectory()) {
+                processFolder(file, new File(outputDir, file.getName()), model, true);
+            }
         }
     }
 
@@ -385,19 +383,4 @@ public class ImageProcessorFX extends Application {
             alert.showAndWait();
         });
     }
-
-    private boolean showCancelDialog(Runnable onCancel) {
-        // Crear el diálogo de confirmación
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Atencion");
-        alert.setHeaderText(null); // Puedes agregar un encabezado si es necesario
-        alert.setContentText("Deseas cancelar?");
-
-        // Mostrar el diálogo y esperar la respuesta del usuario
-        Optional<ButtonType> result = alert.showAndWait();
-
-        // Retorna true si el usuario seleccionó "Aceptar/OK", false en caso contrario
-        return result.isPresent() && result.get() == ButtonType.OK;
-    }
-
 }
