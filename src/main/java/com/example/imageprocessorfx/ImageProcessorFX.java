@@ -53,7 +53,7 @@ public class ImageProcessorFX extends Application {
     public void start(Stage primaryStage) {
 
         stage = primaryStage;
-        primaryStage.setTitle("Improve Images Quality With IA");
+        primaryStage.setTitle("Improve Images Quality With AI");
 
         // Main layout
         layout = new HBox(10);
@@ -253,6 +253,7 @@ public class ImageProcessorFX extends Application {
                 modelComboBox.setDisable(false);
                 closeButton.setText("Exit");
                 textCurrentFolder.setText("Current Folder:");
+                textCurrentFile.setText("Current File:");
                 updateProgress(0);
                 imageView.setImage(null);
             });
