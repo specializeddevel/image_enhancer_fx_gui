@@ -15,7 +15,6 @@ import javafx.scene.image.ImageView;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Optional;
 
 public class ImageProcessorFX extends Application {
 
@@ -28,6 +27,7 @@ public class ImageProcessorFX extends Application {
     private CheckBox convertToWebpCheckBox;
     private CheckBox upsaceleCheckBox;
     private CheckBox showPreviewCheckBox;
+    private CheckBox deleteSourceFileCheckBox;
     private ProgressBar progressBar;
     private Process conversionProcess;
     private Button processButton;
@@ -45,6 +45,10 @@ public class ImageProcessorFX extends Application {
     private int verticalsize = 270;
     private int horizontalsize = 0;
 
+    private boolean deleteSourceFile = false;
+
+    ConfirmDialog dialog = new ConfirmDialog();
+
     public static void main(String[] args) {
         launch(args);
     }
@@ -53,7 +57,7 @@ public class ImageProcessorFX extends Application {
     public void start(Stage primaryStage) {
 
         stage = primaryStage;
-        primaryStage.setTitle("Improve Images Quality With AI");
+        primaryStage.setTitle("Improve Images Quality And Optimize Size With AI");
 
         // Main layout
         layout = new HBox(10);
@@ -71,7 +75,7 @@ public class ImageProcessorFX extends Application {
         Label inputLabel = new Label("Input Folder:");
         inputFolderField = new TextField();
         inputFolderField.setPrefWidth(300);
-        inputFolderField.setEditable(false);
+        //inputFolderField.setEditable(false);
         browseInputButton = new Button("Browse");
         browseInputButton.setOnAction(e -> selectFolder(primaryStage, inputFolderField));
 
@@ -86,7 +90,7 @@ public class ImageProcessorFX extends Application {
         Label outputLabel = new Label("Output Folder:");
         outputFolderField = new TextField();
         outputFolderField.setPrefWidth(300);
-        outputFolderField.setEditable(false);
+        //outputFolderField.setEditable(false);
         browseOutputButton = new Button("Browse");
         browseOutputButton.setOnAction(e -> selectFolder(primaryStage, outputFolderField));
         outputBox.getChildren().addAll(outputLabel, outputFolderField, browseOutputButton);
@@ -107,10 +111,13 @@ public class ImageProcessorFX extends Application {
         modelBox.getChildren().addAll(modelLabel, modelComboBox);
 
         // Checkbox for subfolders
-        HBox checkBoxes = new HBox(10);
+        HBox checkBoxes1 = new HBox(10);
+        HBox checkBoxes2 = new HBox(10);
+        deleteSourceFileCheckBox = new CheckBox("Delete Source File");
         subfoldersCheckBox = new CheckBox("Process Subfolders");
         upsaceleCheckBox = new CheckBox("Upscale 4x");
         upsaceleCheckBox.setSelected(true);
+
         convertToWebpCheckBox = new CheckBox("Convert to Webp");
         convertToWebpCheckBox.setSelected(true);
         showPreviewCheckBox = new CheckBox("Preview");
@@ -125,7 +132,25 @@ public class ImageProcessorFX extends Application {
             }
 
         });
-        checkBoxes.getChildren().addAll(subfoldersCheckBox, upsaceleCheckBox, convertToWebpCheckBox, showPreviewCheckBox);
+        deleteSourceFileCheckBox.setSelected(false);
+        deleteSourceFileCheckBox.setOnAction( e -> {
+            if(deleteSourceFileCheckBox.isSelected()) {
+                dialog.showConfirmationDialog(
+                        "Confirm Delete Source File",
+                        "Are you sure you want to delete the source file?",
+                        confirmed -> {
+                            if (confirmed) {
+                                deleteSourceFile = true;
+                            } else {
+                                deleteSourceFileCheckBox.setSelected(false);
+                                deleteSourceFile = false;
+                            }
+                        }
+                );
+            }
+        });
+        checkBoxes1.getChildren().addAll(deleteSourceFileCheckBox, subfoldersCheckBox);
+        checkBoxes2.getChildren().addAll(upsaceleCheckBox, convertToWebpCheckBox, showPreviewCheckBox);
 
         HBox progressBox = new HBox(10);
         // PROGRESS BAR
@@ -168,7 +193,7 @@ public class ImageProcessorFX extends Application {
         textCurrentFile = new Text("Current File:");
 
         // Add everything to the layout
-        layout1.getChildren().addAll(inputBox, outputBox, modelBox, checkBoxes, progressBox, textCurrentFolder, textCurrentFile, bottomButtons);
+        layout1.getChildren().addAll(inputBox, outputBox, modelBox, checkBoxes1, checkBoxes2, progressBox, textCurrentFolder, textCurrentFile, bottomButtons);
         layout2.getChildren().addAll(imageView);
 
         if (showPreviewCheckBox.isSelected())
@@ -224,13 +249,17 @@ public class ImageProcessorFX extends Application {
         progressBar.setProgress(0);
         progressIndicator.setVisible(true); // Show the spinner
         processButton.setDisable(true);
+        inputFolderField.setDisable(true);
+        outputFolderField.setDisable(true);
         browseInputButton.setDisable(true);
         browseOutputButton.setDisable(true);
+        deleteSourceFileCheckBox.setDisable(true);
         upsaceleCheckBox.setDisable(true);
         convertToWebpCheckBox.setDisable(true);
         subfoldersCheckBox.setDisable(true);
         modelComboBox.setDisable(true);
         closeButton.setText("Cancel");
+
 
         // Processing in a separate thread
         new Thread(() -> {
@@ -245,8 +274,12 @@ public class ImageProcessorFX extends Application {
                 progressBar.setProgress(1);
                 progressIndicator.setVisible(false); // Hide the spinner
                 processButton.setDisable(false);
+                inputFolderField.setDisable(false);
+                outputFolderField.setDisable(false);
                 browseInputButton.setDisable(false);
                 browseOutputButton.setDisable(false);
+                deleteSourceFileCheckBox.setDisable(false);
+                deleteSourceFileCheckBox.setSelected(false);
                 upsaceleCheckBox.setDisable(false);
                 convertToWebpCheckBox.setDisable(false);
                 subfoldersCheckBox.setDisable(false);
@@ -355,6 +388,10 @@ public class ImageProcessorFX extends Application {
                     if ((!upscalePicture && convertToWebp) || (upscalePicture && convertToWebp)) {
                         // Delete temporary file
                         outputFile.delete();
+                    }
+                    if ((deleteSourceFile)) {
+                        // Delete source file
+                        file.delete();
                     }
                 } catch (IOException | InterruptedException ex) {
                     ex.printStackTrace();
