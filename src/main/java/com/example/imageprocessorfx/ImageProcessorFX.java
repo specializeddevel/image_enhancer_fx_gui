@@ -28,6 +28,7 @@ public class ImageProcessorFX extends Application {
     private CheckBox upsaceleCheckBox;
     private CheckBox showPreviewCheckBox;
     private CheckBox deleteSourceFileCheckBox;
+    private CheckBox includeWebpFilesCheckBox;
     private ProgressBar progressBar;
     private Process conversionProcess;
     private Button processButton;
@@ -42,10 +43,11 @@ public class ImageProcessorFX extends Application {
 
     private Stage stage;
 
-    private int verticalsize = 270;
+    private int verticalsize = 305;
     private int horizontalsize = 0;
 
     private boolean deleteSourceFile = false;
+    private boolean includeWebpFiles = false;
 
     ConfirmDialog dialog = new ConfirmDialog();
 
@@ -117,7 +119,7 @@ public class ImageProcessorFX extends Application {
         subfoldersCheckBox = new CheckBox("Process Subfolders");
         upsaceleCheckBox = new CheckBox("Upscale 4x");
         upsaceleCheckBox.setSelected(true);
-
+        includeWebpFilesCheckBox = new CheckBox("Include WebP Files");
         convertToWebpCheckBox = new CheckBox("Convert to Webp");
         convertToWebpCheckBox.setSelected(true);
         showPreviewCheckBox = new CheckBox("Preview");
@@ -147,9 +149,12 @@ public class ImageProcessorFX extends Application {
                             }
                         }
                 );
+            } else {
+                deleteSourceFile = false;
             }
         });
-        checkBoxes1.getChildren().addAll(deleteSourceFileCheckBox, subfoldersCheckBox);
+        includeWebpFilesCheckBox.setSelected(true);
+        checkBoxes1.getChildren().addAll(deleteSourceFileCheckBox, subfoldersCheckBox, includeWebpFilesCheckBox);
         checkBoxes2.getChildren().addAll(upsaceleCheckBox, convertToWebpCheckBox, showPreviewCheckBox);
 
         HBox progressBox = new HBox(10);
@@ -205,7 +210,7 @@ public class ImageProcessorFX extends Application {
         if(showPreviewCheckBox.isSelected()){
             horizontalsize=600;
         } else {
-            horizontalsize=490;
+            horizontalsize=500;
         }
 
         Scene scene = new Scene(layout, horizontalsize, verticalsize);
@@ -257,6 +262,7 @@ public class ImageProcessorFX extends Application {
         upsaceleCheckBox.setDisable(true);
         convertToWebpCheckBox.setDisable(true);
         subfoldersCheckBox.setDisable(true);
+        includeWebpFilesCheckBox.setDisable(true);
         modelComboBox.setDisable(true);
         closeButton.setText("Cancel");
 
@@ -280,9 +286,11 @@ public class ImageProcessorFX extends Application {
                 browseOutputButton.setDisable(false);
                 deleteSourceFileCheckBox.setDisable(false);
                 deleteSourceFileCheckBox.setSelected(false);
+                deleteSourceFile=false;
                 upsaceleCheckBox.setDisable(false);
                 convertToWebpCheckBox.setDisable(false);
                 subfoldersCheckBox.setDisable(false);
+                includeWebpFilesCheckBox.setDisable(false);
                 modelComboBox.setDisable(false);
                 closeButton.setText("Exit");
                 textCurrentFolder.setText("Current Folder:");
@@ -328,15 +336,17 @@ public class ImageProcessorFX extends Application {
         int totalFiles = files.length;
         int processedFiles = 0;
 
-        textCurrentFolder.setText("Current Folder: " + inputDir.getAbsolutePath());
+        textCurrentFolder.setText("Current Folder: " + inputDir.getName());
 
 
         for (File file : files) {
             if (!this.flag) { break; }
 
-            if (file.isFile() && (file.getName().endsWith(".jpg") || file.getName().endsWith(".JPG")
-                    || file.getName().endsWith(".jpeg") || file.getName().endsWith(".png") || file.getName().endsWith(".webp"))) {
+            //Verify if the file extension is .webp and status of the checkbox that include webp files in the processing
+            includeWebpFiles = includeWebpFilesCheckBox.isSelected() || !file.getName().endsWith("webp");
 
+            if (file.isFile() && includeWebpFiles && (file.getName().endsWith(".jpg") || file.getName().endsWith(".JPG")
+                    || file.getName().endsWith(".jpeg") || file.getName().endsWith(".png") || file.getName().endsWith(".webp"))) {
                 File outputFile = new File(outputDir, file.getName().replaceFirst("\\.[^.]+$", "_improved.png"));
                 File compressedFile = new File(outputDir, file.getName().replaceFirst("\\.[^.]+$", "_final.webp"));
                 textCurrentFile.setText("Current File: " + file.getName() + " Progress/Total Files: " + (processedFiles+1) + "/" + totalFiles);
