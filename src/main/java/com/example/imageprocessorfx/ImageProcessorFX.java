@@ -2,6 +2,9 @@ package com.example.imageprocessorfx;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.text.Text;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
@@ -12,6 +15,7 @@ import javafx.geometry.Insets;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
+import java.awt.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -35,6 +39,7 @@ public class ImageProcessorFX extends Application {
     private Button browseInputButton;
     private Button browseOutputButton;
     private Button closeButton;
+    private Button showFolderButton;
     private Boolean flag = true;
     private ProgressIndicator progressIndicator;
     private ImageView imageView;
@@ -191,8 +196,14 @@ public class ImageProcessorFX extends Application {
                 System.out.println("Cancel pressed");
             }
         });
+        showFolderButton = new Button("Open Current Folder");
+        showFolderButton.setDisable(true);
+        showFolderButton.setOnAction(e -> {
+            System.out.println("No Folder Processing");
+        });
 
-        bottomButtons.getChildren().addAll(processButton, closeButton);
+
+        bottomButtons.getChildren().addAll(processButton, closeButton, showFolderButton);
 
         textCurrentFolder = new Text("Current Folder:");
         textCurrentFile = new Text("Current File:");
@@ -265,6 +276,7 @@ public class ImageProcessorFX extends Application {
         includeWebpFilesCheckBox.setDisable(true);
         modelComboBox.setDisable(true);
         closeButton.setText("Cancel");
+        showFolderButton.setDisable(false);
 
 
         // Processing in a separate thread
@@ -293,6 +305,7 @@ public class ImageProcessorFX extends Application {
                 includeWebpFilesCheckBox.setDisable(false);
                 modelComboBox.setDisable(false);
                 closeButton.setText("Exit");
+                showFolderButton.setDisable(true);
                 textCurrentFolder.setText("Current Folder:");
                 textCurrentFile.setText("Current File:");
                 updateProgress(0);
@@ -337,6 +350,11 @@ public class ImageProcessorFX extends Application {
         int processedFiles = 0;
 
         textCurrentFolder.setText("Current Folder: " + inputDir.getName());
+
+        showFolderButton.setOnAction(e -> {
+            openFolder(inputDir.getAbsolutePath());
+        });
+
 
 
         for (File file : files) {
@@ -430,5 +448,30 @@ public class ImageProcessorFX extends Application {
             alert.setContentText(message);
             alert.showAndWait();
         });
+    }
+
+    private void openFolder(String folderPath) {
+
+
+            File folder = new File(folderPath);
+
+            // Verificar si la carpeta existe
+            if (!folder.exists() || !folder.isDirectory()) {
+                System.out.println("La carpeta no existe o no es válida: " + folderPath);
+                return;
+            }
+
+            // Usar Desktop para abrir la carpeta
+            if (Desktop.isDesktopSupported()) {
+                Desktop desktop = Desktop.getDesktop();
+                try {
+                    desktop.open(folder); // Abre la carpeta en el explorador
+                } catch (IOException e) {
+                    System.out.println("Error al intentar abrir la carpeta: " + e.getMessage());
+                }
+            } else {
+                System.out.println("Abrir carpetas no es compatible con este sistema.");
+            }
+
     }
 }
