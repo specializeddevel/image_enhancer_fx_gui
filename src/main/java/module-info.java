@@ -5,6 +5,7 @@ module com.example.imageprocessorfx {
     requires org.controlsfx.controls;
     requires net.synedra.validatorfx;
     requires org.kordamp.bootstrapfx.core;
+    requires java.desktop;
 
     opens com.example.imageprocessorfx to javafx.fxml;
     exports com.example.imageprocessorfx;
