@@ -349,7 +349,7 @@ public class ImageProcessorFX extends Application {
         int totalFiles = files.length;
         int processedFiles = 0;
 
-        textCurrentFolder.setText(null);
+        //textCurrentFolder.setText(null);
         textCurrentFolder.setText("Current Folder: " + inputDir.getName());
 
         showFolderButton.setOnAction(e -> {
@@ -370,7 +370,7 @@ public class ImageProcessorFX extends Application {
                 File outputFile = new File(outputDir, file.getName().replaceFirst("\\.[^.]+$", "_improved.png"));
                 File compressedFile = new File(outputDir, file.getName().replaceFirst("\\.[^.]+$", "_final.webp"));
 
-                textCurrentFile.setText(null);
+                //textCurrentFile.setText(null);
                 textCurrentFile.setText("Current File: " + file.getName() + " Progress/Total Files: " + (processedFiles+1) + "/" + totalFiles);
 
                 try {
@@ -443,7 +443,7 @@ public class ImageProcessorFX extends Application {
     }
 
     private void updateProgress(double progress) {
-        javafx.application.Platform.runLater(() -> progressBar.setProgress(progress));
+        progressBar.setProgress(progress);
     }
 
     private void showAlert(Alert.AlertType alertType, String title, String message) {
