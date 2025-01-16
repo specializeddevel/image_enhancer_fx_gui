@@ -349,11 +349,13 @@ public class ImageProcessorFX extends Application {
         int totalFiles = files.length;
         int processedFiles = 0;
 
+        textCurrentFolder.setText(null);
         textCurrentFolder.setText("Current Folder: " + inputDir.getName());
 
         showFolderButton.setOnAction(e -> {
             openFolder(inputDir.getAbsolutePath());
         });
+
 
 
 
@@ -367,6 +369,8 @@ public class ImageProcessorFX extends Application {
                     || file.getName().endsWith(".jpeg") || file.getName().endsWith(".png") || file.getName().endsWith(".webp"))) {
                 File outputFile = new File(outputDir, file.getName().replaceFirst("\\.[^.]+$", "_improved.png"));
                 File compressedFile = new File(outputDir, file.getName().replaceFirst("\\.[^.]+$", "_final.webp"));
+
+                textCurrentFile.setText(null);
                 textCurrentFile.setText("Current File: " + file.getName() + " Progress/Total Files: " + (processedFiles+1) + "/" + totalFiles);
 
                 try {
@@ -430,8 +434,9 @@ public class ImageProcessorFX extends Application {
                 // Update progress bar
                 processedFiles++;
                 double progress = (double) processedFiles / totalFiles;
-                updateProgress(progress);
+                Platform.runLater(() -> updateProgress(progress));
             } else if (processSubfolders && file.isDirectory()) {
+                Thread.sleep(50);
                 processFolder(file, new File(outputDir, file.getName()), model, true);
             }
         }
