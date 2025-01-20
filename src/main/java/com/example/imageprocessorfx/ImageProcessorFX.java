@@ -15,7 +15,7 @@ import javafx.geometry.Insets;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
-import java.awt.*;
+import java.awt.Desktop;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -425,8 +425,30 @@ public class ImageProcessorFX extends Application {
                         // Delete source file
                         file.delete();
                     }
-                } catch (IOException | InterruptedException ex) {
-                    ex.printStackTrace();
+                } catch (IOException e) {
+                    System.err.println("IO error: " + e.getMessage());
+                    e.printStackTrace();
+                    throw e;
+                } catch (InterruptedException e) {
+                    System.err.println("The process was interrupted: " + e.getMessage());
+                    e.printStackTrace();
+                    Thread.currentThread().interrupt();
+                    throw e;
+                } catch (RuntimeException e) {
+                    System.err.println("RuntimeException: " + e.getMessage());
+                    e.printStackTrace();
+                    throw e;
+                } catch (Error e) {
+                    // Catch fatal errors like OutOfMemoryError
+                    System.err.println("Critical system error: " + e.getMessage());
+                    e.printStackTrace();
+
+
+                    throw e;
+                } catch (Exception e) {
+                    System.err.println("Unexpected exception: " + e.getMessage());
+                    e.printStackTrace();
+                    throw e;
                 } finally {
                     // Clear the reference to the process once it finishes
                     conversionProcess = null;
@@ -462,7 +484,7 @@ public class ImageProcessorFX extends Application {
 
             // Verificar si la carpeta existe
             if (!folder.exists() || !folder.isDirectory()) {
-                System.out.println("La carpeta no existe o no es válida: " + folderPath);
+                System.out.println("The folder does not exist or is invalid: " + folderPath);
                 return;
             }
 
@@ -472,10 +494,10 @@ public class ImageProcessorFX extends Application {
                 try {
                     desktop.open(folder); // Abre la carpeta en el explorador
                 } catch (IOException e) {
-                    System.out.println("Error al intentar abrir la carpeta: " + e.getMessage());
+                    System.out.println("Error when trying to open the folder: " + e.getMessage());
                 }
             } else {
-                System.out.println("Abrir carpetas no es compatible con este sistema.");
+                System.out.println("Opening folders is not supported on this system.");
             }
 
     }
