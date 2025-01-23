@@ -39,7 +39,8 @@ public class ImageProcessorFX extends Application {
     private Button browseInputButton;
     private Button browseOutputButton;
     private Button closeButton;
-    private Button showFolderButton;
+    private Button showSourceFolderButton;
+    private Button showDestinyFolderButton;
     private Boolean flag = true;
     private ProgressIndicator progressIndicator;
     private ImageView imageView;
@@ -196,14 +197,20 @@ public class ImageProcessorFX extends Application {
                 System.out.println("Cancel pressed");
             }
         });
-        showFolderButton = new Button("Open Current Folder");
-        showFolderButton.setDisable(true);
-        showFolderButton.setOnAction(e -> {
+        showSourceFolderButton = new Button("Open Source");
+        showSourceFolderButton.setDisable(true);
+        showSourceFolderButton.setOnAction(e -> {
+            System.out.println("No Folder Processing");
+        });
+
+        showDestinyFolderButton = new Button("Open Destiny");
+        showDestinyFolderButton.setDisable(true);
+        showDestinyFolderButton.setOnAction(e -> {
             System.out.println("No Folder Processing");
         });
 
 
-        bottomButtons.getChildren().addAll(processButton, closeButton, showFolderButton);
+        bottomButtons.getChildren().addAll(processButton, closeButton, showSourceFolderButton, showDestinyFolderButton);
 
         textCurrentFolder = new Text("Current Folder:");
         textCurrentFile = new Text("Current File:");
@@ -276,7 +283,8 @@ public class ImageProcessorFX extends Application {
         includeWebpFilesCheckBox.setDisable(true);
         modelComboBox.setDisable(true);
         closeButton.setText("Cancel");
-        showFolderButton.setDisable(false);
+        showSourceFolderButton.setDisable(false);
+        showDestinyFolderButton.setDisable(false);
 
 
         // Processing in a separate thread
@@ -305,7 +313,8 @@ public class ImageProcessorFX extends Application {
                 includeWebpFilesCheckBox.setDisable(false);
                 modelComboBox.setDisable(false);
                 closeButton.setText("Exit");
-                showFolderButton.setDisable(true);
+                showSourceFolderButton.setDisable(true);
+                showDestinyFolderButton.setDisable(true);
                 textCurrentFolder.setText("Current Folder:");
                 textCurrentFile.setText("Current File:");
                 updateProgress(0);
@@ -352,12 +361,13 @@ public class ImageProcessorFX extends Application {
         //textCurrentFolder.setText(null);
         textCurrentFolder.setText("Current Folder: " + inputDir.getName());
 
-        showFolderButton.setOnAction(e -> {
+        showSourceFolderButton.setOnAction(e -> {
             openFolder(inputDir.getAbsolutePath());
         });
 
-
-
+        showDestinyFolderButton.setOnAction(e -> {
+            openFolder(outputDir.getAbsolutePath());
+        });
 
         for (File file : files) {
             if (!this.flag) { break; }
