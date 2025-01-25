@@ -49,7 +49,7 @@ public class ImageProcessorFX extends Application {
 
     private Stage stage;
 
-    private int verticalsize = 305;
+    private int verticalsize = 265;
     private int horizontalsize = 0;
 
     private boolean deleteSourceFile = false;
@@ -216,7 +216,7 @@ public class ImageProcessorFX extends Application {
         textCurrentFile = new Text("Current File:");
 
         // Add everything to the layout
-        layout1.getChildren().addAll(inputBox, outputBox, modelBox, checkBoxes1, checkBoxes2, progressBox, textCurrentFolder, textCurrentFile, bottomButtons);
+        layout1.getChildren().addAll(inputBox, outputBox, modelBox, checkBoxes1, checkBoxes2,  textCurrentFolder, textCurrentFile, bottomButtons);
         layout2.getChildren().addAll(imageView);
 
         if (showPreviewCheckBox.isSelected())
@@ -356,7 +356,10 @@ public class ImageProcessorFX extends Application {
         File[] files = inputDir.listFiles();
         if (files == null) return;
         int totalFiles = files.length;
-        int processedFiles = 0;
+        int processedFiles = 1;
+        double percentageDone = (1/(double)totalFiles)*100;
+        String percentajeFormated;
+        String processedString;
 
         //textCurrentFolder.setText(null);
         textCurrentFolder.setText("Current Folder: " + inputDir.getName());
@@ -381,7 +384,10 @@ public class ImageProcessorFX extends Application {
                 File compressedFile = new File(outputDir, file.getName().replaceFirst("\\.[^.]+$", "_final.webp"));
 
                 //textCurrentFile.setText(null);
-                textCurrentFile.setText("Current File: " + file.getName() + " Progress/Total Files: " + (processedFiles+1) + "/" + totalFiles);
+                percentageDone = ((double) processedFiles/ (double) totalFiles)*100;
+                percentajeFormated = String.format("%.1f", percentageDone);
+                processedString = String.format("Processing file %d of %d in folder (%.1f%%)", processedFiles , totalFiles, percentageDone);
+                textCurrentFile.setText(processedString);
 
                 try {
                     if (showPreviewCheckBox.isSelected()) {
