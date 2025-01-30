@@ -33,7 +33,6 @@ public class ImageProcessorFX extends Application {
     private CheckBox showPreviewCheckBox;
     private CheckBox deleteSourceFileCheckBox;
     private CheckBox includeWebpFilesCheckBox;
-    private ProgressBar progressBar;
     private Process conversionProcess;
     private Button processButton;
     private Button browseInputButton;
@@ -42,7 +41,6 @@ public class ImageProcessorFX extends Application {
     private Button showSourceFolderButton;
     private Button showDestinyFolderButton;
     private Boolean flag = true;
-    private ProgressIndicator progressIndicator;
     private ImageView imageView;
     private Text textCurrentFolder;
     private Text textCurrentFile;
@@ -163,19 +161,6 @@ public class ImageProcessorFX extends Application {
         checkBoxes1.getChildren().addAll(deleteSourceFileCheckBox, subfoldersCheckBox, includeWebpFilesCheckBox);
         checkBoxes2.getChildren().addAll(upsaceleCheckBox, convertToWebpCheckBox, showPreviewCheckBox);
 
-        HBox progressBox = new HBox(10);
-        // PROGRESS BAR
-        progressBar = new ProgressBar(50);
-        progressBar.setPrefWidth(400);
-        progressBar.setPrefHeight(30);
-
-        //Progress indicator (spinner)
-        progressIndicator = new ProgressIndicator();
-        progressIndicator.setPrefWidth(30);
-        progressIndicator.setPrefHeight(30);
-        progressIndicator.setVisible(false); // Oculto inicialmente
-        progressBox.getChildren().addAll(progressBar, progressIndicator);
-
         HBox bottomButtons = new HBox(10);
         // Button to start processing
         processButton = new Button("Go");
@@ -268,9 +253,6 @@ public class ImageProcessorFX extends Application {
             showAlert(Alert.AlertType.ERROR, "Error", "Input folder is not valid.");
             return;
         }
-
-        progressBar.setProgress(0);
-        progressIndicator.setVisible(true); // Show the spinner
         processButton.setDisable(true);
         inputFolderField.setDisable(true);
         outputFolderField.setDisable(true);
@@ -285,8 +267,6 @@ public class ImageProcessorFX extends Application {
         closeButton.setText("Cancel");
         showSourceFolderButton.setDisable(false);
         showDestinyFolderButton.setDisable(false);
-
-
         // Processing in a separate thread
         new Thread(() -> {
             try {
@@ -297,8 +277,6 @@ public class ImageProcessorFX extends Application {
                 showAlert(Alert.AlertType.ERROR, "Error", "An error occurred while processing files.");
             }
             Platform.runLater(() -> {
-                progressBar.setProgress(1);
-                progressIndicator.setVisible(false); // Hide the spinner
                 processButton.setDisable(false);
                 inputFolderField.setDisable(false);
                 outputFolderField.setDisable(false);
@@ -317,7 +295,6 @@ public class ImageProcessorFX extends Application {
                 showDestinyFolderButton.setDisable(true);
                 textCurrentFolder.setText("Current Folder:");
                 textCurrentFile.setText("Current File:");
-                updateProgress(0);
                 imageView.setImage(null);
             });
         }).start();
@@ -327,7 +304,6 @@ public class ImageProcessorFX extends Application {
         String currentDir = System.getProperty("user.dir");
 
         String osName = System.getProperty("os.name").toLowerCase();
-        String osArch = System.getProperty("os.arch");
         File realesrganExecutable;
         File cwebpExecutable;
         boolean convertToWebp = convertToWebpCheckBox.isSelected();
@@ -472,7 +448,6 @@ public class ImageProcessorFX extends Application {
                 // Update progress bar
                 processedFiles++;
                 double progress = (double) processedFiles / totalFiles;
-                Platform.runLater(() -> updateProgress(progress));
             } else if (processSubfolders && file.isDirectory()) {
                 Thread.sleep(50);
                 processFolder(file, new File(outputDir, file.getName()), model, true);
@@ -480,9 +455,6 @@ public class ImageProcessorFX extends Application {
         }
     }
 
-    private void updateProgress(double progress) {
-        progressBar.setProgress(progress);
-    }
 
     private void showAlert(Alert.AlertType alertType, String title, String message) {
         javafx.application.Platform.runLater(() -> {
