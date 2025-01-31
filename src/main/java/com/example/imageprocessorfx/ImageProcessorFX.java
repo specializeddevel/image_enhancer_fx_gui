@@ -374,40 +374,13 @@ public class ImageProcessorFX extends Application {
                         input.close();
                     }
 
+                    ImageProcessor imageProcessor = new ImageProcessor(currentDir);
                     if(upscalePicture) {
-                        // Configure and run the process
-                        ProcessBuilder realesrganProcessBuilder = new ProcessBuilder(
-                                realesrganExecutable.getAbsolutePath(),
-                                "-i", file.getAbsolutePath(),
-                                "-o", outputFile.getAbsolutePath(),
-                                "-n", model,
-                                "-f", "png"
-                        );
-                        // Start the process and save the reference
-                        conversionProcess = realesrganProcessBuilder.start();
-                        // Wait for the process to finish (optional if necessary)
-                        conversionProcess.waitFor();
+                        imageProcessor.upscaleImage(file,outputFile,model,conversionProcess);
                     }
 
                     if (convertToWebp) {
-                        ProcessBuilder cwebpProcessBuilder;
-                        if (upscalePicture) {
-                            cwebpProcessBuilder = new ProcessBuilder(
-                                    cwebpExecutable.getAbsolutePath(),
-                                    "-q", "80",
-                                    outputFile.getAbsolutePath(),
-                                    "-o", compressedFile.getAbsolutePath()
-                            );
-                        } else {
-                            cwebpProcessBuilder = new ProcessBuilder(
-                                    cwebpExecutable.getAbsolutePath(),
-                                    "-q", "80",
-                                    file.getAbsolutePath(),
-                                    "-o", compressedFile.getAbsolutePath()
-                            );
-                        }
-                        conversionProcess = cwebpProcessBuilder.start();
-                        conversionProcess.waitFor();
+                        imageProcessor.convertToWebP(file, outputFile, compressedFile, conversionProcess, upscalePicture);
                     }
                     if ((!upscalePicture && convertToWebp) || (upscalePicture && convertToWebp)) {
                         // Delete temporary file
