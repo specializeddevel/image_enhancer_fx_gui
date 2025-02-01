@@ -304,26 +304,9 @@ public class ImageProcessorFX extends Application {
         String currentDir = System.getProperty("user.dir");
 
         String osName = System.getProperty("os.name").toLowerCase();
-        File realesrganExecutable;
-        File cwebpExecutable;
         boolean convertToWebp = convertToWebpCheckBox.isSelected();
         boolean upscalePicture = upsaceleCheckBox.isSelected();
 
-        // Full paths to executables for each OS
-        if (osName.contains("win")) {
-            realesrganExecutable = new File(currentDir, "realesrgan-ncnn-vulkan.exe");
-            cwebpExecutable = new File(currentDir, "cwebp.exe");
-        } else if (osName.contains("mac")) {
-            realesrganExecutable = new File(currentDir, "realesrgan-ncnn-vulkan-mac");
-            cwebpExecutable = new File(currentDir, "cwebp-mac");
-        } else if (osName.contains("nix") || osName.contains("nux") || osName.contains("aix")) {
-            realesrganExecutable = new File(currentDir, "realesrgan-ncnn-vulkan");
-            cwebpExecutable = new File(currentDir, "cwebp");
-        } else {
-            System.out.println("Unknown operating system");
-            conversionProcess = null;
-            return;
-        }
 
         if (!outputDir.exists()) {
             outputDir.mkdirs();
@@ -334,10 +317,8 @@ public class ImageProcessorFX extends Application {
         int totalFiles = files.length;
         int processedFiles = 1;
         double percentageDone = (1/(double)totalFiles)*100;
-        String percentajeFormated;
         String processedString;
 
-        //textCurrentFolder.setText(null);
         textCurrentFolder.setText("Current Folder: " + inputDir.getName());
 
         showSourceFolderButton.setOnAction(e -> {
@@ -354,14 +335,14 @@ public class ImageProcessorFX extends Application {
             //Verify if the file extension is .webp and status of the checkbox that include webp files in the processing
             includeWebpFiles = includeWebpFilesCheckBox.isSelected() || !file.getName().endsWith("webp");
 
+            //Original file must have one of these extension: jpg or JPG, jpeg, png, webp
             if (file.isFile() && includeWebpFiles && (file.getName().endsWith(".jpg") || file.getName().endsWith(".JPG")
                     || file.getName().endsWith(".jpeg") || file.getName().endsWith(".png") || file.getName().endsWith(".webp"))) {
+
                 File outputFile = new File(outputDir, file.getName().replaceFirst("\\.[^.]+$", "_improved.png"));
                 File compressedFile = new File(outputDir, file.getName().replaceFirst("\\.[^.]+$", "_final.webp"));
 
-                //textCurrentFile.setText(null);
                 percentageDone = ((double) processedFiles/ (double) totalFiles)*100;
-                percentajeFormated = String.format("%.1f", percentageDone);
                 processedString = String.format("Processing file %d of %d in folder (%.1f%%)", processedFiles , totalFiles, percentageDone);
                 textCurrentFile.setText(processedString);
 
@@ -375,21 +356,15 @@ public class ImageProcessorFX extends Application {
                     }
 
                     ImageProcessor imageProcessor = new ImageProcessor(currentDir);
-                    if(upscalePicture) {
-                        imageProcessor.upscaleImage(file,outputFile,model,conversionProcess);
-                    }
+                    // Improve the image
+                    if(upscalePicture) imageProcessor.upscaleImage(file,outputFile,model,conversionProcess);
+                    // Convert to Webp
+                    if (convertToWebp) imageProcessor.convertToWebP(file, outputFile, compressedFile, conversionProcess, upscalePicture);
+                    // Delete temporary improved 4x PNG file
+                    if ((upscalePicture && convertToWebp)) FileManager.deleteFile(outputFile.getAbsoluteFile());
+                    // Delete original source file
+                    if ((deleteSourceFile && (upscalePicture || convertToWebp))) FileManager.deleteFile(file.getAbsoluteFile());
 
-                    if (convertToWebp) {
-                        imageProcessor.convertToWebP(file, outputFile, compressedFile, conversionProcess, upscalePicture);
-                    }
-                    if ((!upscalePicture && convertToWebp) || (upscalePicture && convertToWebp)) {
-                        // Delete temporary file
-                        outputFile.delete();
-                    }
-                    if ((deleteSourceFile)) {
-                        // Delete source file
-                        file.delete();
-                    }
                 } catch (IOException e) {
                     System.err.println("IO error: " + e.getMessage());
                     e.printStackTrace();
@@ -407,8 +382,6 @@ public class ImageProcessorFX extends Application {
                     // Catch fatal errors like OutOfMemoryError
                     System.err.println("Critical system error: " + e.getMessage());
                     e.printStackTrace();
-
-
                     throw e;
                 } catch (Exception e) {
                     System.err.println("Unexpected exception: " + e.getMessage());
