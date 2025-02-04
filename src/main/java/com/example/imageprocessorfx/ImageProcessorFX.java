@@ -19,8 +19,11 @@ import java.awt.Desktop;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ImageProcessorFX extends Application {
+
+    private AtomicReference<Process> conversionProcessRef = new AtomicReference<>();
 
     private VBox layout1, layout2;
     private HBox layout;
@@ -33,7 +36,7 @@ public class ImageProcessorFX extends Application {
     private CheckBox showPreviewCheckBox;
     private CheckBox deleteSourceFileCheckBox;
     private CheckBox includeWebpFilesCheckBox;
-    private Process conversionProcess;
+
     private Button processButton;
     private Button browseInputButton;
     private Button browseOutputButton;
@@ -52,8 +55,6 @@ public class ImageProcessorFX extends Application {
 
     private boolean deleteSourceFile = false;
     private boolean includeWebpFiles = false;
-
-    ConfirmDialog dialog = new ConfirmDialog();
 
     public static void main(String[] args) {
         launch(args);
@@ -141,7 +142,7 @@ public class ImageProcessorFX extends Application {
         deleteSourceFileCheckBox.setSelected(false);
         deleteSourceFileCheckBox.setOnAction( e -> {
             if(deleteSourceFileCheckBox.isSelected()) {
-                dialog.showConfirmationDialog(
+                UIHandler.showConfirmationDialog(
                         "Confirm Delete Source File",
                         "Are you sure you want to delete the source file?",
                         confirmed -> {
@@ -172,16 +173,20 @@ public class ImageProcessorFX extends Application {
         // Close button
         closeButton = new Button("Exit");
         closeButton.setOnAction(e -> {
-            if (conversionProcess != null && conversionProcess.isAlive()) {
+            Process process = conversionProcessRef.get(); // Get the current process
+            if (process != null && process.isAlive()) {
                 this.flag = false;
-                conversionProcess.destroy(); // Termina el proceso si está activo
+                process.destroy(); // Finish the process if it is active
+                System.out.println("Canceled process.");
             }
             if (closeButton.getText().equals("Exit")) {
-                System.exit(0); // Cierra la aplicación
+                System.exit(0); // Close the application
             } else {
                 System.out.println("Cancel pressed");
             }
         });
+
+
         showSourceFolderButton = new Button("Open Source");
         showSourceFolderButton.setDisable(true);
         showSourceFolderButton.setOnAction(e -> {
@@ -222,8 +227,10 @@ public class ImageProcessorFX extends Application {
         primaryStage.show();
 
         primaryStage.setOnCloseRequest(event -> {
-            if (conversionProcess != null && conversionProcess.isAlive()) {
-                conversionProcess.destroy(); // Stop the process
+            Process process = conversionProcessRef.get(); // Get the current process
+            if (process != null && process.isAlive()) {
+                process.destroy(); // Stop the process
+                System.out.println("Canceled process.");
             }
             System.exit(0);
         });
@@ -244,13 +251,13 @@ public class ImageProcessorFX extends Application {
         boolean processSubfolders = subfoldersCheckBox.isSelected();
 
         if (inputFolder.isEmpty() || outputFolder.isEmpty()) {
-            showAlert(Alert.AlertType.ERROR, "Error", "Please select both input and output folders.");
+            UIHandler.showAlert(Alert.AlertType.ERROR, "Error", "Please select both input and output folders.");
             return;
         }
 
         File inputDir = new File(inputFolder);
         if (!inputDir.exists() || !inputDir.isDirectory()) {
-            showAlert(Alert.AlertType.ERROR, "Error", "Input folder is not valid.");
+            UIHandler.showAlert(Alert.AlertType.ERROR, "Error", "Input folder is not valid.");
             return;
         }
         processButton.setDisable(true);
@@ -271,10 +278,10 @@ public class ImageProcessorFX extends Application {
         new Thread(() -> {
             try {
                 processFolder(inputDir, new File(outputFolder), model, processSubfolders);
-                showAlert(Alert.AlertType.INFORMATION, "Process finished", "Processing finished!");
+                UIHandler.showAlert(Alert.AlertType.INFORMATION, "Process finished", "Processing finished!");
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
-                showAlert(Alert.AlertType.ERROR, "Error", "An error occurred while processing files.");
+                UIHandler.showAlert(Alert.AlertType.ERROR, "Error", "An error occurred while processing files.");
             }
             Platform.runLater(() -> {
                 processButton.setDisable(false);
@@ -322,11 +329,11 @@ public class ImageProcessorFX extends Application {
         textCurrentFolder.setText("Current Folder: " + inputDir.getName());
 
         showSourceFolderButton.setOnAction(e -> {
-            openFolder(inputDir.getAbsolutePath());
+            FileManager.openFolder(inputDir.getAbsolutePath());
         });
 
         showDestinyFolderButton.setOnAction(e -> {
-            openFolder(outputDir.getAbsolutePath());
+            FileManager.openFolder(outputDir.getAbsolutePath());
         });
 
         for (File file : files) {
@@ -357,13 +364,13 @@ public class ImageProcessorFX extends Application {
 
                     ImageProcessor imageProcessor = new ImageProcessor(currentDir);
                     // Improve the image
-                    if(upscalePicture) imageProcessor.upscaleImage(file,outputFile,model,conversionProcess);
+                    if(upscalePicture && flag) imageProcessor.upscaleImage(file,outputFile,model,conversionProcessRef);
                     // Convert to Webp
-                    if (convertToWebp) imageProcessor.convertToWebP(file, outputFile, compressedFile, conversionProcess, upscalePicture);
+                    if (convertToWebp && flag) imageProcessor.convertToWebP(file, outputFile, compressedFile, conversionProcessRef, upscalePicture);
                     // Delete temporary improved 4x PNG file
-                    if ((upscalePicture && convertToWebp)) FileManager.deleteFile(outputFile.getAbsoluteFile());
+                    if ((upscalePicture && convertToWebp && flag)) FileManager.deleteFile(outputFile.getAbsoluteFile());
                     // Delete original source file
-                    if ((deleteSourceFile && (upscalePicture || convertToWebp))) FileManager.deleteFile(file.getAbsoluteFile());
+                    if ((deleteSourceFile && (upscalePicture || convertToWebp) && flag)) FileManager.deleteFile(file.getAbsoluteFile());
 
                 } catch (IOException e) {
                     System.err.println("IO error: " + e.getMessage());
@@ -387,9 +394,6 @@ public class ImageProcessorFX extends Application {
                     System.err.println("Unexpected exception: " + e.getMessage());
                     e.printStackTrace();
                     throw e;
-                } finally {
-                    // Clear the reference to the process once it finishes
-                    conversionProcess = null;
                 }
                 // Update progress bar
                 processedFiles++;
@@ -399,40 +403,5 @@ public class ImageProcessorFX extends Application {
                 processFolder(file, new File(outputDir, file.getName()), model, true);
             }
         }
-    }
-
-
-    private void showAlert(Alert.AlertType alertType, String title, String message) {
-        javafx.application.Platform.runLater(() -> {
-            Alert alert = new Alert(alertType);
-            alert.setTitle(title);
-            alert.setContentText(message);
-            alert.showAndWait();
-        });
-    }
-
-    private void openFolder(String folderPath) {
-
-
-            File folder = new File(folderPath);
-
-            // Verificar si la carpeta existe
-            if (!folder.exists() || !folder.isDirectory()) {
-                System.out.println("The folder does not exist or is invalid: " + folderPath);
-                return;
-            }
-
-            // Usar Desktop para abrir la carpeta
-            if (Desktop.isDesktopSupported()) {
-                Desktop desktop = Desktop.getDesktop();
-                try {
-                    desktop.open(folder); // Abre la carpeta en el explorador
-                } catch (IOException e) {
-                    System.out.println("Error when trying to open the folder: " + e.getMessage());
-                }
-            } else {
-                System.out.println("Opening folders is not supported on this system.");
-            }
-
     }
 }
