@@ -2,6 +2,7 @@ package com.example.imageprocessorfx;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ImageProcessor {
 
@@ -27,7 +28,7 @@ public class ImageProcessor {
         }
     }
 
-    public void upscaleImage(File inputFile, File outputFile, String model, Process conversionProcess) throws IOException, InterruptedException {
+    public void upscaleImage(File inputFile, File outputFile, String model, AtomicReference<Process> conversionProcessRef) throws IOException, InterruptedException {
         // Configure and run the process
         ProcessBuilder realesrganProcessBuilder = new ProcessBuilder(
                 realesrganExecutable.getAbsolutePath(),
@@ -37,12 +38,13 @@ public class ImageProcessor {
                 "-f", "png"
         );
         // Start the process and save the reference
-        conversionProcess = realesrganProcessBuilder.start();
+        Process process = realesrganProcessBuilder.start();
+        conversionProcessRef.set(process); // Update the process reference
         // Wait for the process to finish (optional if necessary)
-        conversionProcess.waitFor();
+        process.waitFor();
     }
 
-    public void convertToWebP(File file, File outputFile, File compressedFile, Process conversionProcess, boolean upscalePicture) throws IOException, IOException, InterruptedException {
+    public void convertToWebP(File file, File outputFile, File compressedFile, AtomicReference<Process> conversionProcessRef, boolean upscalePicture) throws IOException, IOException, InterruptedException {
         ProcessBuilder cwebpProcessBuilder;
         if (upscalePicture) {
             cwebpProcessBuilder = new ProcessBuilder(
@@ -59,8 +61,9 @@ public class ImageProcessor {
                     "-o", compressedFile.getAbsolutePath()
             );
         }
-        conversionProcess = cwebpProcessBuilder.start();
-        conversionProcess.waitFor();
+        Process process = cwebpProcessBuilder.start();
+        conversionProcessRef.set(process); // Update the process reference
+        process.waitFor();
     }
 
 }
