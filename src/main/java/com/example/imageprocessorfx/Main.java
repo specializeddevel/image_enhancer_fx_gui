@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class Main extends Application {
 
     private AtomicReference<Process> conversionProcessRef = new AtomicReference<>();
-    private final AtomicBoolean isPaused = new AtomicBoolean(false); // Control if the process is slow
+    private final AtomicBoolean isPaused = new AtomicBoolean(false); // Control if the process is paused
 
     private VBox layout1, layout2;
     private HBox layout;
@@ -87,7 +87,6 @@ public class Main extends Application {
         Label inputLabel = new Label("Input Folder:");
         inputFolderField = new TextField();
         inputFolderField.setPrefWidth(300);
-        //inputFolderField.setEditable(false);
         browseInputButton = new Button("Browse");
         browseInputButton.setOnAction(e -> selectFolder(primaryStage, inputFolderField));
 
@@ -102,7 +101,6 @@ public class Main extends Application {
         Label outputLabel = new Label("Output Folder:");
         outputFolderField = new TextField();
         outputFolderField.setPrefWidth(300);
-        //outputFolderField.setEditable(false);
         browseOutputButton = new Button("Browse");
         browseOutputButton.setOnAction(e -> selectFolder(primaryStage, outputFolderField));
         outputBox.getChildren().addAll(outputLabel, outputFolderField, browseOutputButton);
@@ -122,17 +120,16 @@ public class Main extends Application {
         modelComboBox.getSelectionModel().selectFirst();
         modelBox.getChildren().addAll(modelLabel, modelComboBox);
 
-        // Checkbox for subfolders
         HBox checkBoxes1 = new HBox(10);
         HBox checkBoxes2 = new HBox(10);
-        deleteSourceFileCheckBox = new CheckBox("Delete Source File");
+        deleteSourceFileCheckBox = new CheckBox("Delete Source Files");
         subfoldersCheckBox = new CheckBox("Process Subfolders");
-        upsaceleCheckBox = new CheckBox("Upscale 4x");
+        upsaceleCheckBox = new CheckBox("Apply 4x upscale");
         upsaceleCheckBox.setSelected(true);
-        includeWebpFilesCheckBox = new CheckBox("Include WebP Files");
-        convertToWebpCheckBox = new CheckBox("Convert to Webp");
+        includeWebpFilesCheckBox = new CheckBox("Include .Webp Files");
+        convertToWebpCheckBox = new CheckBox("Convert to .Webp");
         convertToWebpCheckBox.setSelected(true);
-        showPreviewCheckBox = new CheckBox("Preview");
+        showPreviewCheckBox = new CheckBox("Show Preview");
         showPreviewCheckBox.setSelected(false);
         showPreviewCheckBox.setOnAction( e -> {
             if(showPreviewCheckBox.isSelected()) {
@@ -148,8 +145,8 @@ public class Main extends Application {
         deleteSourceFileCheckBox.setOnAction( e -> {
             if(deleteSourceFileCheckBox.isSelected()) {
                 UIHandler.showConfirmationDialog(
-                        "Confirm Delete Source File",
-                        "Are you sure you want to delete the source file?",
+                        "Confirm Source File Deletion",
+                        "Do you want to delete the source files?",
                         confirmed -> {
                             if (confirmed) {
                                 deleteSourceFile = true;
@@ -169,7 +166,7 @@ public class Main extends Application {
 
         HBox bottomButtons = new HBox(10);
         // Button to start processing
-        processButton = new Button("Go");
+        processButton = new Button("Start");
         processButton.setOnAction(e -> {
             flag = true;
             processFiles();
@@ -216,8 +213,8 @@ public class Main extends Application {
 
         bottomButtons.getChildren().addAll(processButton,  pauseProcessButton, closeButton, showSourceFolderButton, showDestinyFolderButton);
 
-        textCurrentFolder = new Text("No folders processed.");
-        textCurrentFile = new Text("No files processed.");
+        textCurrentFolder = new Text("No folders processed yet.");
+        textCurrentFile = new Text("No files processed yet.");
 
         // Add everything to the layout
         layout1.getChildren().addAll(inputBox, outputBox, modelBox, checkBoxes1, checkBoxes2,  textCurrentFolder, textCurrentFile, bottomButtons);
