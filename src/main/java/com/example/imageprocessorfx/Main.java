@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class Main extends Application {
 
-    private AtomicReference<Process> conversionProcessRef = new AtomicReference<>();
+    private final AtomicReference<Process> conversionProcessRef = new AtomicReference<>();
     private final AtomicBoolean isPaused = new AtomicBoolean(false); // Control if the process is paused
 
     private VBox layout1, layout2;
@@ -50,10 +50,7 @@ public class Main extends Application {
     private Text textCurrentFolder;
     private Text textCurrentFile;
 
-    private Stage stage;
 
-    private int verticalsize = 265;
-    private int horizontalsize = 0;
 
     private boolean deleteSourceFile = false;
     private boolean includeWebpFiles = false;
@@ -68,6 +65,11 @@ public class Main extends Application {
     }
 
     private void createGUI(Stage primaryStage) {
+
+        int horizontalsize = 0;
+        int verticalsize = 265;
+        Stage stage;
+
         stage = primaryStage;
         primaryStage.setTitle("Improve Images Quality And Optimize Size With AI");
 
@@ -188,13 +190,13 @@ public class Main extends Application {
             }
         });
 
-        showSourceFolderButton = new Button("Open Source");
+        showSourceFolderButton = new Button("Show Source");
         showSourceFolderButton.setDisable(true);
         showSourceFolderButton.setOnAction(e -> {
             System.out.println("No Folder Processing");
         });
 
-        showDestinyFolderButton = new Button("Open Destiny");
+        showDestinyFolderButton = new Button("Show Destiny");
         showDestinyFolderButton.setDisable(true);
         showDestinyFolderButton.setOnAction(e -> {
             System.out.println("No Folder Processing");
@@ -207,7 +209,9 @@ public class Main extends Application {
                 isPaused.set(!isPaused.get()); // Alternate between pause and resumption
                 pauseProcessButton.setText(isPaused.get() ? "Continue" : "Pause");
                 closeButton.setDisable(isPaused.get());
-                System.out.println(isPaused.get() ? "Paused process" : "Resumed process");
+                System.out.println(isPaused.get()
+                        ? "Paused process"
+                        : "Resumed process");
             }
         });
 
@@ -227,9 +231,9 @@ public class Main extends Application {
         // Configure and display the window
 
         if(showPreviewCheckBox.isSelected()){
-            horizontalsize=600;
+            horizontalsize =600;
         } else {
-            horizontalsize=500;
+            horizontalsize =500;
         }
 
         Scene scene = new Scene(layout, horizontalsize, verticalsize);
@@ -293,7 +297,6 @@ public class Main extends Application {
         String osName = System.getProperty("os.name").toLowerCase();
         boolean convertToWebp = convertToWebpCheckBox.isSelected();
         boolean upscalePicture = upsaceleCheckBox.isSelected();
-
 
         if (!outputDir.exists()) {
             outputDir.mkdirs();
