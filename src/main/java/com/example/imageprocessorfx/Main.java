@@ -49,11 +49,14 @@ public class Main extends Application {
     private ImageView imageView;
     private Text textCurrentFolder;
     private Text textCurrentFile;
+    private Text textFolderCount;
 
 
 
     private boolean deleteSourceFile = false;
     private boolean includeWebpFiles = false;
+
+    private int totalFoldersProcessed = 1;
 
     public static void main(String[] args) {
         launch(args);
@@ -303,7 +306,9 @@ public class Main extends Application {
         }
 
         File[] files = inputDir.listFiles();
-        if (files == null) return;
+        if (files == null) {
+            return;
+        }
         int totalFiles = files.length;
         int processedFiles = 1;
         double percentageDone = (1/(double)totalFiles)*100;
@@ -345,7 +350,7 @@ public class Main extends Application {
                 File compressedFile = new File(outputDir, file.getName().replaceFirst("\\.[^.]+$", "_final.webp"));
 
                 percentageDone = ((double) processedFiles/ (double) totalFiles)*100;
-                processedString = String.format("Processing file %d of %d in folder (%.1f%%)", processedFiles , totalFiles, percentageDone);
+                processedString = String.format("Total folders processed: %d, processing file %d of %d in current folder (%.0f%%)", totalFoldersProcessed, processedFiles , totalFiles, percentageDone);
                 textCurrentFile.setText(processedString);
 
                 try {
@@ -394,7 +399,8 @@ public class Main extends Application {
                 processedFiles++;
                 double progress = (double) processedFiles / totalFiles;
             } else if (processSubfolders && file.isDirectory()) {
-                Thread.sleep(50);
+                totalFoldersProcessed++;
+                //Thread.sleep(50);
                 processFolder(file, new File(outputDir, file.getName()), model, true);
             }
         }
