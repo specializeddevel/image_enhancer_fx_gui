@@ -49,7 +49,6 @@ public class Main extends Application {
     private ImageView imageView;
     private Text textCurrentFolder;
     private Text textCurrentFile;
-    private Text textFolderCount;
 
 
 
@@ -69,11 +68,9 @@ public class Main extends Application {
 
     private void createGUI(Stage primaryStage) {
 
-        int horizontalsize = 0;
-        int verticalsize = 265;
-        Stage stage;
+        int horizontalSize;
+        int verticalSize = 265;
 
-        stage = primaryStage;
         primaryStage.setTitle("Improve Images Quality And Optimize Size With AI");
 
         // Main layout
@@ -195,15 +192,11 @@ public class Main extends Application {
 
         showSourceFolderButton = new Button("Show Source");
         showSourceFolderButton.setDisable(true);
-        showSourceFolderButton.setOnAction(e -> {
-            System.out.println("No Folder Processing");
-        });
+        showSourceFolderButton.setOnAction(e -> System.out.println("No Folder Processing"));
 
         showDestinyFolderButton = new Button("Show Destiny");
         showDestinyFolderButton.setDisable(true);
-        showDestinyFolderButton.setOnAction(e -> {
-            System.out.println("No Folder Processing");
-        });
+        showDestinyFolderButton.setOnAction(e -> System.out.println("No Folder Processing"));
 
         pauseProcessButton = new Button("Pause");
         pauseProcessButton.setDisable(true);
@@ -234,12 +227,12 @@ public class Main extends Application {
         // Configure and display the window
 
         if(showPreviewCheckBox.isSelected()){
-            horizontalsize =600;
+            horizontalSize =600;
         } else {
-            horizontalsize =500;
+            horizontalSize =500;
         }
 
-        Scene scene = new Scene(layout, horizontalsize, verticalsize);
+        Scene scene = new Scene(layout, horizontalSize, verticalSize);
         primaryStage.setResizable(false);
         primaryStage.setScene(scene);
         primaryStage.show();
@@ -288,22 +281,17 @@ public class Main extends Application {
                 e.printStackTrace();
                 UIHandler.showAlert(Alert.AlertType.ERROR, "Error", "An error occurred while processing files.");
             }
-            Platform.runLater(() -> {
-                enableControls();
-            });
+            Platform.runLater(() -> enableControls());
         }).start();
     }
 
     private void processFolder(File inputDir, File outputDir, String model, boolean processSubfolders) throws IOException, InterruptedException {
         String currentDir = System.getProperty("user.dir");
 
-        String osName = System.getProperty("os.name").toLowerCase();
-        boolean convertToWebp = convertToWebpCheckBox.isSelected();
+                boolean convertToWebp = convertToWebpCheckBox.isSelected();
         boolean upscalePicture = upsaceleCheckBox.isSelected();
 
-        if (!outputDir.exists()) {
-            outputDir.mkdirs();
-        }
+        if (!outputDir.exists()) outputDir.mkdirs();
 
         File[] files = inputDir.listFiles();
         if (files == null) {
@@ -316,13 +304,9 @@ public class Main extends Application {
 
         textCurrentFolder.setText("Current Folder: " + inputDir.getName());
 
-        showSourceFolderButton.setOnAction(e -> {
-            FileManager.openFolder(inputDir.getAbsolutePath());
-        });
+        showSourceFolderButton.setOnAction(e -> FileManager.openFolder(inputDir.getAbsolutePath()));
 
-        showDestinyFolderButton.setOnAction(e -> {
-            FileManager.openFolder(outputDir.getAbsolutePath());
-        });
+        showDestinyFolderButton.setOnAction(e -> FileManager.openFolder(outputDir.getAbsolutePath()));
 
         for (File file : files) {
 
@@ -397,10 +381,9 @@ public class Main extends Application {
                 }
                 // Update progress bar
                 processedFiles++;
-                double progress = (double) processedFiles / totalFiles;
             } else if (processSubfolders && file.isDirectory()) {
                 totalFoldersProcessed++;
-                //Thread.sleep(50);
+                Thread.sleep(50);
                 processFolder(file, new File(outputDir, file.getName()), model, true);
             }
         }
