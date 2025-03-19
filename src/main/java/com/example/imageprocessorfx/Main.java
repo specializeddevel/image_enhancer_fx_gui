@@ -326,9 +326,9 @@ public class Main extends Application {
             //Verify if the file extension is .webp and status of the checkbox that include webp files in the processing
             includeWebpFiles = includeWebpFilesCheckBox.isSelected() || !file.getName().endsWith("webp");
 
-            //Original file must have one of these extension: jpg or JPG, jpeg, png, webp
-            if (file.isFile() && includeWebpFiles && (file.getName().endsWith(".jpg") || file.getName().endsWith(".JPG")
-                    || file.getName().endsWith(".jpeg") || file.getName().endsWith(".png") || file.getName().endsWith(".webp"))) {
+            //Original file must have one of these extension: jpg, jpeg, png, webp
+            String fileName = file.getName().toLowerCase();
+            if (file.isFile() && includeWebpFiles && (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg") || fileName.endsWith(".png") || fileName.endsWith(".webp"))) {
 
                 File outputFile = new File(outputDir, file.getName().replaceFirst("\\.[^.]+$", "_improved.png"));
                 File compressedFile = new File(outputDir, file.getName().replaceFirst("\\.[^.]+$", "_final.webp"));
