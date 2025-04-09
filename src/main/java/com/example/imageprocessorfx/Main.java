@@ -18,16 +18,17 @@ import javafx.scene.image.ImageView;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class Main extends Application {
 
-    private AtomicReference<Process> conversionProcessRef = new AtomicReference<>();
+    private final AtomicReference<Process> conversionProcessRef = new AtomicReference<>();
     private final AtomicBoolean isPaused = new AtomicBoolean(false); // Control if the process is slow
 
-    private VBox layout1, layout2;
-    private HBox layout;
+
     private TextField inputFolderField;
     private TextField outputFolderField;
     private ComboBox<String> modelComboBox;
@@ -45,7 +46,7 @@ public class Main extends Application {
     private Button showSourceFolderButton;
     private Button showDestinyFolderButton;
     private Button pauseProcessButton;
-    private Boolean flag = true;
+    private boolean flag = true;
     private ImageView imageView;
     private Text textCurrentFolder;
     private Text textCurrentFile;
@@ -68,6 +69,9 @@ public class Main extends Application {
     }
 
     private void createGUI(Stage primaryStage) {
+        VBox layout1;
+        VBox layout2;
+        HBox layout;
         stage = primaryStage;
         primaryStage.setTitle("Improve Images Quality And Optimize Size With AI");
 
@@ -87,7 +91,6 @@ public class Main extends Application {
         Label inputLabel = new Label("Input Folder:");
         inputFolderField = new TextField();
         inputFolderField.setPrefWidth(300);
-        //inputFolderField.setEditable(false);
         browseInputButton = new Button("Browse");
         browseInputButton.setOnAction(e -> selectFolder(primaryStage, inputFolderField));
 
@@ -151,7 +154,7 @@ public class Main extends Application {
                         "Confirm Delete Source File",
                         "Are you sure you want to delete the source file?",
                         confirmed -> {
-                            if (confirmed) {
+                            if (true) {
                                 deleteSourceFile = true;
                             } else {
                                 deleteSourceFileCheckBox.setSelected(false);
@@ -193,15 +196,11 @@ public class Main extends Application {
 
         showSourceFolderButton = new Button("Open Source");
         showSourceFolderButton.setDisable(true);
-        showSourceFolderButton.setOnAction(e -> {
-            System.out.println("No Folder Processing");
-        });
+        showSourceFolderButton.setOnAction(e ->  System.out.println("No Folder Processing"));
 
         showDestinyFolderButton = new Button("Open Destiny");
         showDestinyFolderButton.setDisable(true);
-        showDestinyFolderButton.setOnAction(e -> {
-            System.out.println("No Folder Processing");
-        });
+        showDestinyFolderButton.setOnAction(e -> System.out.println("No Folder Processing"));
 
         pauseProcessButton = new Button("Pause");
         pauseProcessButton.setDisable(true);
@@ -224,8 +223,9 @@ public class Main extends Application {
         layout2.getChildren().addAll(imageView);
 
         if (showPreviewCheckBox.isSelected())
-            layout.getChildren().addAll(layout1, layout2); else
-                layout.getChildren().addAll(layout1);
+            layout.getChildren().addAll(layout1, layout2);
+        else
+            layout.getChildren().addAll(layout1);
 
         // Configure and display the window
 
@@ -263,15 +263,16 @@ public class Main extends Application {
         String outputFolder = outputFolderField.getText();
         String model = modelComboBox.getValue();
         boolean processSubfolders = subfoldersCheckBox.isSelected();
+        var errorTitle = "Error";
 
         if (inputFolder.isEmpty() || outputFolder.isEmpty()) {
-            UIHandler.showAlert(Alert.AlertType.ERROR, "Error", "Please select both input and output folders.");
+            UIHandler.showAlert(Alert.AlertType.ERROR, errorTitle, "Please select both input and output folders.");
             return;
         }
 
         File inputDir = new File(inputFolder);
         if (!inputDir.exists() || !inputDir.isDirectory()) {
-            UIHandler.showAlert(Alert.AlertType.ERROR, "Error", "Input folder is not valid.");
+            UIHandler.showAlert(Alert.AlertType.ERROR, errorTitle, "Input folder is not valid.");
             return;
         }
         initControls();
@@ -282,18 +283,15 @@ public class Main extends Application {
                 UIHandler.showAlert(Alert.AlertType.INFORMATION, "Process finished", "Processing finished!");
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
-                UIHandler.showAlert(Alert.AlertType.ERROR, "Error", "An error occurred while processing files.");
+                UIHandler.showAlert(Alert.AlertType.ERROR, errorTitle, "An error occurred while processing files.");
             }
-            Platform.runLater(() -> {
-                enableControls();
-            });
+            Platform.runLater(this::enableControls);
         }).start();
     }
 
     private void processFolder(File inputDir, File outputDir, String model, boolean processSubfolders) throws IOException, InterruptedException {
         String currentDir = System.getProperty("user.dir");
 
-        String osName = System.getProperty("os.name").toLowerCase();
         boolean convertToWebp = convertToWebpCheckBox.isSelected();
         boolean upscalePicture = upsaceleCheckBox.isSelected();
 
@@ -304,20 +302,17 @@ public class Main extends Application {
 
         File[] files = inputDir.listFiles();
         if (files == null) return;
+        Arrays.sort(files, Comparator.comparing(File::getName));
         int totalFiles = files.length;
         int processedFiles = 1;
-        double percentageDone = (1/(double)totalFiles)*100;
+        double percentageDone;
         String processedString;
 
         textCurrentFolder.setText("Current Folder: " + inputDir.getName());
 
-        showSourceFolderButton.setOnAction(e -> {
-            FileManager.openFolder(inputDir.getAbsolutePath());
-        });
+        showSourceFolderButton.setOnAction(e -> FileManager.openFolder(inputDir.getAbsolutePath()));
 
-        showDestinyFolderButton.setOnAction(e -> {
-            FileManager.openFolder(outputDir.getAbsolutePath());
-        });
+        showDestinyFolderButton.setOnAction(e -> FileManager.openFolder(outputDir.getAbsolutePath()));
 
         for (File file : files) {
 
@@ -380,19 +375,19 @@ public class Main extends Application {
                     System.err.println("RuntimeException: " + e.getMessage());
                     e.printStackTrace();
                     throw e;
-                } catch (Error e) {
-                    // Catch fatal errors like OutOfMemoryError
-                    System.err.println("Critical system error: " + e.getMessage());
-                    e.printStackTrace();
-                    throw e;
                 } catch (Exception e) {
                     System.err.println("Unexpected exception: " + e.getMessage());
                     e.printStackTrace();
                     throw e;
                 }
+                catch (Error e) {
+                    // Catch fatal errors like OutOfMemoryError
+                    System.err.println("Critical system error: " + e.getMessage());
+                    e.printStackTrace();
+                    throw e;
+                }
                 // Update progress bar
                 processedFiles++;
-                double progress = (double) processedFiles / totalFiles;
             } else if (processSubfolders && file.isDirectory()) {
                 Thread.sleep(50);
                 processFolder(file, new File(outputDir, file.getName()), model, true);
