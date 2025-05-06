@@ -348,11 +348,16 @@ public class Main extends Application {
 
                     ImageProcessor imageProcessor = new ImageProcessor(currentDir);
                     // Improve the image
-                    if(upscalePicture && flag) imageProcessor.upscaleImage(file,outputFile,model,conversionProcessRef);
+                    if(!(fileName.contains("megapixel") || fileName.contains("resize") || fileName.contains("edit") || fileName.contains("final"))) {
+                        if(upscalePicture && flag) imageProcessor.upscaleImage(file,outputFile,model,conversionProcessRef);
+                    }
                     // Convert to Webp
                     if (convertToWebp && flag) imageProcessor.convertToWebP(file, outputFile, compressedFile, conversionProcessRef, upscalePicture);
                     // Delete temporary improved 4x PNG file
-                    if ((upscalePicture && convertToWebp && flag)) FileManager.deleteFile(outputFile.getAbsoluteFile());
+                    if(!(fileName.contains("megapixel") || fileName.contains("resize") || fileName.contains("edit") || fileName.contains("final"))) {
+                        if ((upscalePicture && convertToWebp && flag))
+                            FileManager.deleteFile(outputFile.getAbsoluteFile());
+                    }
                     // Delete original source file
                     if ((deleteSourceFile && (upscalePicture || convertToWebp) && flag)) FileManager.deleteFile(file.getAbsoluteFile());
 
