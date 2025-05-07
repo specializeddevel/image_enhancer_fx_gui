@@ -357,9 +357,11 @@ public class Main extends Application {
                     if(!(fileName.contains("megapixel") || fileName.contains("resize") || fileName.contains("edit") || fileName.contains("final"))) {
                         if ((upscalePicture && convertToWebp && flag))
                             FileManager.deleteFile(outputFile.getAbsoluteFile());
+                        // Delete original source file
+                        if ((deleteSourceFile && (upscalePicture || convertToWebp) && flag))
+                            FileManager.deleteFile(file.getAbsoluteFile());
                     }
-                    // Delete original source file
-                    if ((deleteSourceFile && (upscalePicture || convertToWebp) && flag)) FileManager.deleteFile(file.getAbsoluteFile());
+
 
                 } catch (IOException e) {
                     System.err.println("IO error: " + e.getMessage());
