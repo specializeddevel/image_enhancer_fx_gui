@@ -44,15 +44,24 @@ public class ImageProcessor {
         process.waitFor();
     }
 
-    public void convertToWebP(File file, File outputFile, File compressedFile, AtomicReference<Process> conversionProcessRef, boolean upscalePicture) throws IOException, IOException, InterruptedException {
+    public void convertToWebP(File file, File outputFile, File compressedFile, AtomicReference<Process> conversionProcessRef, boolean upscalePicture, boolean excludePreEnhancedFiles) throws IOException, IOException, InterruptedException {
         ProcessBuilder cwebpProcessBuilder;
         if (upscalePicture) {
-            cwebpProcessBuilder = new ProcessBuilder(
-                    cwebpExecutable.getAbsolutePath(),
-                    "-q", "80",
-                    outputFile.getAbsolutePath(),
-                    "-o", compressedFile.getAbsolutePath()
-            );
+            if (!excludePreEnhancedFiles) {
+                cwebpProcessBuilder = new ProcessBuilder(
+                        cwebpExecutable.getAbsolutePath(),
+                        "-q", "80",
+                        outputFile.getAbsolutePath(),
+                        "-o", compressedFile.getAbsolutePath()
+                );
+            } else {
+                cwebpProcessBuilder = new ProcessBuilder(
+                        cwebpExecutable.getAbsolutePath(),
+                        "-q", "80",
+                        file.getAbsolutePath(),
+                        "-o", compressedFile.getAbsolutePath()
+                );
+            }
         } else {
             cwebpProcessBuilder = new ProcessBuilder(
                     cwebpExecutable.getAbsolutePath(),
