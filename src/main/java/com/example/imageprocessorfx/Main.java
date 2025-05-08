@@ -346,22 +346,33 @@ public class Main extends Application {
                         input.close();
                     }
 
+                    final Boolean excludePreEnhancedFiles = (fileName.contains("megapixel") || fileName.contains("resize") || fileName.contains("edit") || fileName.contains("final"));
                     ImageProcessor imageProcessor = new ImageProcessor(currentDir);
                     // Improve the image
-                    if(!(fileName.contains("megapixel") || fileName.contains("resize") || fileName.contains("edit") || fileName.contains("final"))) {
+                    if(!excludePreEnhancedFiles) {
                         if(upscalePicture && flag) imageProcessor.upscaleImage(file,outputFile,model,conversionProcessRef);
                     }
                     // Convert to Webp
-                    if (convertToWebp && flag) imageProcessor.convertToWebP(file, outputFile, compressedFile, conversionProcessRef, upscalePicture);
+                    if (convertToWebp && flag) imageProcessor.convertToWebP(file, outputFile, compressedFile, conversionProcessRef, upscalePicture, excludePreEnhancedFiles);
                     // Delete temporary improved 4x PNG file
-                    if(!(fileName.contains("megapixel") || fileName.contains("resize") || fileName.contains("edit") || fileName.contains("final"))) {
+                    if(!excludePreEnhancedFiles) {
                         if ((upscalePicture && convertToWebp && flag))
                             FileManager.deleteFile(outputFile.getAbsoluteFile());
                         // Delete original source file
                         if ((deleteSourceFile && (upscalePicture || convertToWebp) && flag))
                             FileManager.deleteFile(file.getAbsoluteFile());
-                    }
+                    } else {
+                        if ((deleteSourceFile && (upscalePicture || convertToWebp) && flag))
+                            FileManager.deleteFile(file.getAbsoluteFile());
+                        else
+                            if ((!deleteSourceFile && (upscalePicture || convertToWebp) && flag))
+                                FileManager.copyFile(file, outputDir);
+                            else {
+                                FileManager.copyFile(file, outputDir);
+                                FileManager.deleteFile(file.getAbsoluteFile());
+                            }
 
+                    }
 
                 } catch (IOException e) {
                     System.err.println("IO error: " + e.getMessage());

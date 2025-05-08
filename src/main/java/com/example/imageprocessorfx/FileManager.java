@@ -3,6 +3,8 @@ package com.example.imageprocessorfx;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 
 public class FileManager {
 
@@ -11,6 +13,48 @@ public class FileManager {
             System.out.println(file.getName() + " deleted successfully");
         } else {
             throw new IOException("Failed to delete the file: " + file.getName());
+        }
+    }
+
+    public static void copyFile(File sourceFile, File targetDirectory) throws IOException {
+        if (!sourceFile.exists()) {
+            throw new IOException("The origin file does not exist: " + sourceFile.getName());
+        }
+
+        if (!targetDirectory.exists()) {
+            if (!targetDirectory.mkdirs()) {
+                throw new IOException("The destiny folder could not be created: " + targetDirectory.getAbsolutePath());
+            }
+        }
+
+        File targetFile = new File(targetDirectory, sourceFile.getName());
+
+        try {
+            Files.copy(sourceFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            System.out.println(sourceFile.getName() + " copiado exitosamente a " + targetDirectory.getPath());
+        } catch (IOException e) {
+            throw new IOException("Error al copiar el archivo " + sourceFile.getName() + ": " + e.getMessage());
+        }
+    }
+
+    public static void moveFile(File sourceFile, File targetDirectory) throws IOException {
+        if (!sourceFile.exists()) {
+            throw new IOException("Source file does not exist: " + sourceFile.getName());
+        }
+
+        if (!targetDirectory.exists()) {
+            if (!targetDirectory.mkdirs()) {
+                throw new IOException("Failed to create target directory: " + targetDirectory.getAbsolutePath());
+            }
+        }
+
+        File targetFile = new File(targetDirectory, sourceFile.getName());
+
+        try {
+            Files.move(sourceFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            System.out.println(sourceFile.getName() + " moved successfully to " + targetDirectory.getPath());
+        } catch (IOException e) {
+            throw new IOException("Error moving file " + sourceFile.getName() + ": " + e.getMessage());
         }
     }
 
@@ -35,4 +79,5 @@ public class FileManager {
         }
 
     }
+
 }
