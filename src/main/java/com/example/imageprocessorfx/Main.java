@@ -346,7 +346,8 @@ public class Main extends Application {
                         input.close();
                     }
 
-                    final Boolean excludePreEnhancedFiles = (fileName.contains("megapixel") || fileName.contains("resize") || fileName.contains("edit") || fileName.contains("final"));
+                    final Boolean excludePreEnhancedFiles = (fileName.contains("megapixel") || fileName.contains("gigapixel") || fileName.contains("resize") || fileName.contains("edit") || fileName.contains("final"));
+
                     ImageProcessor imageProcessor = new ImageProcessor(currentDir);
                     // Improve the image
                     if(!excludePreEnhancedFiles) {
