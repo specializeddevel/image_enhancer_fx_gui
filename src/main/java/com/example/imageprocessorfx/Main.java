@@ -45,7 +45,7 @@ public class Main extends Application {
     private Button showSourceFolderButton;
     private Button showDestinyFolderButton;
     private Button pauseProcessButton;
-    private Boolean flag = true;
+    private boolean flag = true;
     private ImageView imageView;
     private Text textCurrentFolder;
     private Text textCurrentFile;
@@ -346,7 +346,7 @@ public class Main extends Application {
                         input.close();
                     }
 
-                    final Boolean excludePreEnhancedFiles = (fileName.contains("megapixel") || fileName.contains("gigapixel") || fileName.contains("resize") || fileName.contains("edit") || fileName.contains("final"));
+                    final boolean excludePreEnhancedFiles = (fileName.contains("megapixel") || fileName.contains("gigapixel") || fileName.contains("resize") || fileName.contains("edit") || fileName.contains("final") || fileName.contains("ignore"));
 
                     ImageProcessor imageProcessor = new ImageProcessor(currentDir);
                     // Improve the image
@@ -372,7 +372,6 @@ public class Main extends Application {
                                 FileManager.copyFile(file, outputDir);
                                 FileManager.deleteFile(file.getAbsoluteFile());
                             }
-
                     }
 
                 } catch (IOException e) {
