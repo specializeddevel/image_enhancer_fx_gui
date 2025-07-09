@@ -164,10 +164,10 @@ public class Main extends Application {
         showPreviewCheckBox.setOnAction( e -> {
             if(showPreviewCheckBox.isSelected()) {
                 layout.getChildren().add(layout2);
-                primaryStage.setWidth(800); // Increased to accommodate the preview
+                primaryStage.setWidth(710); // Increased to accommodate the preview
             } else {
                 layout.getChildren().remove(layout2);
-                primaryStage.setWidth(600); // Increased to accommodate the new layout
+                primaryStage.setWidth(560); // Increased to accommodate the new layout
             }
 
         });
@@ -195,7 +195,7 @@ public class Main extends Application {
         checkBoxes2.getChildren().addAll(upsaceleCheckBox, convertToWebpCheckBox, showPreviewCheckBox);
 
         HBox bottomButtons = new HBox(10);
-        // Button to start processing
+        // Button to start processing/
         processButton = new Button("Start");
         processButton.getStyleClass().add("success-button");
         processButton.setOnAction(e -> {
@@ -291,9 +291,9 @@ public class Main extends Application {
         // Configure and display the window
 
         if(showPreviewCheckBox.isSelected()){
-            horizontalSize = 800; // Increased to accommodate the preview
+            horizontalSize = 710; // Increased to accommodate the preview
         } else {
-            horizontalSize = 600; // Increased to accommodate the new layout
+            horizontalSize = 550; // Increased to accommodate the new layout
         }
 
         Scene scene = new Scene(layout, horizontalSize, verticalSize);
