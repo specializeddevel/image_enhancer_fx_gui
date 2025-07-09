@@ -1,0 +1,166 @@
+/* Modern styling for Image Enhancer FX GUI */
+
+.root {
+    -fx-font-family: 'Segoe UI', Arial, sans-serif;
+    -fx-background-color: #f5f5f7;
+    -fx-font-size: 12px;
+}
+
+/* Main containers */
+.container {
+    -fx-background-color: white;
+    -fx-background-radius: 8px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 3);
+    -fx-padding: 15px;
+    -fx-spacing: 15px;
+}
+
+/* Labels */
+.label {
+    -fx-font-weight: bold;
+    -fx-text-fill: #333333;
+}
+
+.title-label {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2d2d2d;
+    -fx-padding: 0 0 10px 0;
+}
+
+/* Text fields */
+.text-field {
+    -fx-background-color: #f8f8f8;
+    -fx-border-color: #e0e0e0;
+    -fx-border-radius: 4px;
+    -fx-padding: 8px;
+}
+
+.text-field:focused {
+    -fx-border-color: #4a90e2;
+    -fx-background-color: white;
+}
+
+/* Buttons */
+.button {
+    -fx-background-color: #4a90e2;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 4px;
+    -fx-padding: 8px 15px;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-background-color: #3a80d2;
+}
+
+.button:pressed {
+    -fx-background-color: #2a70c2;
+}
+
+.secondary-button {
+    -fx-background-color: #e0e0e0;
+    -fx-text-fill: #333333;
+}
+
+.secondary-button:hover {
+    -fx-background-color: #d0d0d0;
+}
+
+.secondary-button:pressed {
+    -fx-background-color: #c0c0c0;
+}
+
+.danger-button {
+    -fx-background-color: #e74c3c;
+}
+
+.danger-button:hover {
+    -fx-background-color: #d73c2c;
+}
+
+.success-button {
+    -fx-background-color: #2ecc71;
+}
+
+.success-button:hover {
+    -fx-background-color: #27ae60;
+}
+
+/* ComboBox */
+.combo-box {
+    -fx-background-color: #f8f8f8;
+    -fx-border-color: #e0e0e0;
+    -fx-border-radius: 4px;
+    -fx-padding: 4px;
+}
+
+.combo-box:focused {
+    -fx-border-color: #4a90e2;
+}
+
+.combo-box .list-cell {
+    -fx-padding: 4px 8px;
+}
+
+/* CheckBox */
+.check-box {
+    -fx-text-fill: #333333;
+}
+
+.check-box .box {
+    -fx-background-color: white;
+    -fx-border-color: #e0e0e0;
+    -fx-border-radius: 3px;
+}
+
+.check-box:selected .box {
+    -fx-background-color: #4a90e2;
+    -fx-border-color: #4a90e2;
+}
+
+.check-box:selected .mark {
+    -fx-background-color: white;
+}
+
+/* Progress Bar */
+.progress-bar {
+    -fx-accent: #4a90e2;
+}
+
+.progress-bar .track {
+    -fx-background-color: #f0f0f0;
+    -fx-background-radius: 4px;
+}
+
+.progress-bar .bar {
+    -fx-background-radius: 4px;
+}
+
+/* Status text */
+.status-text {
+    -fx-font-size: 12px;
+    -fx-text-fill: #666666;
+}
+
+/* Image preview */
+.image-preview {
+    -fx-border-color: #e0e0e0;
+    -fx-border-radius: 4px;
+    -fx-padding: 5px;
+    -fx-background-color: white;
+}
+
+/* Section headers */
+.section-header {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2d2d2d;
+    -fx-padding: 5px 0;
+}
+
+/* Separator */
+.separator {
+    -fx-background-color: #e0e0e0;
+}

@@ -2,6 +2,7 @@ package com.example.imageprocessorfx;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
@@ -43,12 +44,13 @@ public class Main extends Application {
     private Button browseOutputButton;
     private Button closeButton;
     private Button showSourceFolderButton;
-    private Button showDestinyFolderButton;
+    private Button showDestinationFolderButton; // Fixed naming from "Destiny" to "Destination"
     private Button pauseProcessButton;
     private boolean flag = true;
     private ImageView imageView;
-    private Text textCurrentFolder;
-    private Text textCurrentFile;
+    private Label textCurrentFolder;
+    private Label textCurrentFile;
+    private ProgressBar progressBar;
 
 
 
@@ -63,52 +65,70 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) {
+        // Load CSS
+        String cssPath = getClass().getResource("/styles/application.css").toExternalForm();
         createGUI(primaryStage);
+
+        // Apply CSS to the scene
+        primaryStage.getScene().getStylesheets().add(cssPath);
     }
 
     private void createGUI(Stage primaryStage) {
 
         int horizontalSize;
-        int verticalSize = 265;
+        int verticalSize = 600; // Increased to accommodate the new layout
 
         primaryStage.setTitle("Improve Images Quality And Optimize Size With AI");
 
-        // Main layout
-        layout = new HBox(10);
-        layout.setPadding(new Insets(5));
+        // Main layout with modern styling
+        layout = new HBox(15);
+        layout.setPadding(new Insets(15));
+        layout.getStyleClass().add("container");
 
+        layout1 = new VBox(15);
+        layout1.setPadding(new Insets(10));
+        layout1.getStyleClass().add("container");
 
-        layout1 = new VBox(10);
-        layout1.setPadding(new Insets(5));
+        layout2 = new VBox(15);
+        layout2.setPadding(new Insets(10));
+        layout2.getStyleClass().add("container");
 
-        layout2 = new VBox(10);
-        layout2.setPadding(new Insets(5));
+        // Add a title label
+        Label titleLabel = new Label("Image Enhancer");
+        titleLabel.getStyleClass().add("title-label");
 
         // Field for input folder
         HBox inputBox = new HBox(15);
+        inputBox.setAlignment(Pos.CENTER_LEFT);
         Label inputLabel = new Label("Input Folder:");
         inputFolderField = new TextField();
         inputFolderField.setPrefWidth(300);
         browseInputButton = new Button("Browse");
+        browseInputButton.getStyleClass().add("secondary-button");
         browseInputButton.setOnAction(e -> selectFolder(primaryStage, inputFolderField));
 
         imageView = new ImageView();
         imageView.setFitWidth(100);
         imageView.setFitHeight(150);
         imageView.setPreserveRatio(true);
+        imageView.getStyleClass().add("image-preview");
 
         inputBox.getChildren().addAll(inputLabel, inputFolderField, browseInputButton);
+
         // Output folder field
-        HBox outputBox = new HBox(10);
+        HBox outputBox = new HBox(15);
+        outputBox.setAlignment(Pos.CENTER_LEFT);
         Label outputLabel = new Label("Output Folder:");
         outputFolderField = new TextField();
         outputFolderField.setPrefWidth(300);
         browseOutputButton = new Button("Browse");
+        browseOutputButton.getStyleClass().add("secondary-button");
         browseOutputButton.setOnAction(e -> selectFolder(primaryStage, outputFolderField));
         outputBox.getChildren().addAll(outputLabel, outputFolderField, browseOutputButton);
 
         // Dropdown menu to select model
-        HBox modelBox = new HBox(10);
+        HBox modelBox = new HBox(15);
+        modelBox.setAlignment(Pos.CENTER_LEFT);
         Label modelLabel = new Label("Model:");
         modelComboBox = new ComboBox<>();
         modelComboBox.getItems().addAll(
@@ -119,11 +139,19 @@ public class Main extends Application {
                 "realesr-animevideov3-x2",
                 "realesr-animevideov3-x4"
         );
+        modelComboBox.setPrefWidth(200);
         modelComboBox.getSelectionModel().selectFirst();
         modelBox.getChildren().addAll(modelLabel, modelComboBox);
 
-        HBox checkBoxes1 = new HBox(10);
-        HBox checkBoxes2 = new HBox(10);
+        // Options section with label
+        Label optionsLabel = new Label("Processing Options");
+        optionsLabel.getStyleClass().add("section-header");
+
+        HBox checkBoxes1 = new HBox(20);
+        checkBoxes1.setAlignment(Pos.CENTER_LEFT);
+        HBox checkBoxes2 = new HBox(20);
+        checkBoxes2.setAlignment(Pos.CENTER_LEFT);
+
         deleteSourceFileCheckBox = new CheckBox("Delete Source Files");
         subfoldersCheckBox = new CheckBox("Process Subfolders");
         upsaceleCheckBox = new CheckBox("Apply 4x upscale");
@@ -136,10 +164,10 @@ public class Main extends Application {
         showPreviewCheckBox.setOnAction( e -> {
             if(showPreviewCheckBox.isSelected()) {
                 layout.getChildren().add(layout2);
-                primaryStage.setWidth(620);
+                primaryStage.setWidth(800); // Increased to accommodate the preview
             } else {
                 layout.getChildren().remove(layout2);
-                primaryStage.setWidth(500);
+                primaryStage.setWidth(600); // Increased to accommodate the new layout
             }
 
         });
@@ -169,6 +197,7 @@ public class Main extends Application {
         HBox bottomButtons = new HBox(10);
         // Button to start processing
         processButton = new Button("Start");
+        processButton.getStyleClass().add("success-button");
         processButton.setOnAction(e -> {
             flag = true;
             processFiles();
@@ -176,6 +205,7 @@ public class Main extends Application {
 
         // Close button
         closeButton = new Button("Exit");
+        closeButton.getStyleClass().add("danger-button");
         closeButton.setOnAction(e -> {
             Process process = conversionProcessRef.get(); // Get the current process
             if (process != null && process.isAlive()) {
@@ -191,14 +221,17 @@ public class Main extends Application {
         });
 
         showSourceFolderButton = new Button("Show Source");
+        showSourceFolderButton.getStyleClass().add("secondary-button");
         showSourceFolderButton.setDisable(true);
         showSourceFolderButton.setOnAction(e -> System.out.println("No Folder Processing"));
 
-        showDestinyFolderButton = new Button("Show Destiny");
-        showDestinyFolderButton.setDisable(true);
-        showDestinyFolderButton.setOnAction(e -> System.out.println("No Folder Processing"));
+        showDestinationFolderButton = new Button("Show Destination");
+        showDestinationFolderButton.getStyleClass().add("secondary-button");
+        showDestinationFolderButton.setDisable(true);
+        showDestinationFolderButton.setOnAction(e -> System.out.println("No Folder Processing"));
 
         pauseProcessButton = new Button("Pause");
+        pauseProcessButton.getStyleClass().add("secondary-button");
         pauseProcessButton.setDisable(true);
         pauseProcessButton.setOnAction(e -> {
             if (flag) {
@@ -211,14 +244,45 @@ public class Main extends Application {
             }
         });
 
-        bottomButtons.getChildren().addAll(processButton,  pauseProcessButton, closeButton, showSourceFolderButton, showDestinyFolderButton);
+        bottomButtons.getChildren().addAll(processButton,  pauseProcessButton, closeButton, showSourceFolderButton, showDestinationFolderButton);
 
-        textCurrentFolder = new Text("No folders processed yet.");
-        textCurrentFile = new Text("No files processed yet.");
+        // Create status section
+        Label statusLabel = new Label("Status");
+        statusLabel.getStyleClass().add("section-header");
+
+        textCurrentFolder = new Label("No folders processed yet.");
+        textCurrentFile = new Label("No files processed yet.");
+        textCurrentFolder.getStyleClass().add("status-text");
+        textCurrentFile.getStyleClass().add("status-text");
+
+        // Create progress bar
+        progressBar = new ProgressBar(0);
+        progressBar.setPrefWidth(300);
+        progressBar.setVisible(false);
 
         // Add everything to the layout
-        layout1.getChildren().addAll(inputBox, outputBox, modelBox, checkBoxes1, checkBoxes2,  textCurrentFolder, textCurrentFile, bottomButtons);
-        layout2.getChildren().addAll(imageView);
+        layout1.getChildren().addAll(
+            titleLabel,
+            inputBox, 
+            outputBox, 
+            modelBox, 
+            new Separator(),
+            optionsLabel,
+            checkBoxes1, 
+            checkBoxes2, 
+            new Separator(),
+            statusLabel,
+            progressBar, 
+            textCurrentFolder, 
+            textCurrentFile, 
+            bottomButtons
+        );
+
+        // Add image preview to right panel
+        layout2.getChildren().addAll(
+            new Label("Image Preview"),
+            imageView
+        );
 
         if (showPreviewCheckBox.isSelected())
             layout.getChildren().addAll(layout1, layout2); else
@@ -227,9 +291,9 @@ public class Main extends Application {
         // Configure and display the window
 
         if(showPreviewCheckBox.isSelected()){
-            horizontalSize =600;
+            horizontalSize = 800; // Increased to accommodate the preview
         } else {
-            horizontalSize =500;
+            horizontalSize = 600; // Increased to accommodate the new layout
         }
 
         Scene scene = new Scene(layout, horizontalSize, verticalSize);
@@ -302,11 +366,11 @@ public class Main extends Application {
         double percentageDone = (1/(double)totalFiles)*100;
         String processedString;
 
-        textCurrentFolder.setText("Current Folder: " + inputDir.getName());
-
-        showSourceFolderButton.setOnAction(e -> FileManager.openFolder(inputDir.getAbsolutePath()));
-
-        showDestinyFolderButton.setOnAction(e -> FileManager.openFolder(outputDir.getAbsolutePath()));
+        Platform.runLater(() -> {
+            textCurrentFolder.setText("Current Folder: " + inputDir.getName());
+            showSourceFolderButton.setOnAction(e -> FileManager.openFolder(inputDir.getAbsolutePath()));
+            showDestinationFolderButton.setOnAction(e -> FileManager.openFolder(outputDir.getAbsolutePath()));
+        });
 
         for (File file : files) {
 
@@ -335,15 +399,31 @@ public class Main extends Application {
 
                 percentageDone = ((double) processedFiles/ (double) totalFiles)*100;
                 processedString = String.format("Total folders processed: %d, processing file %d of %d in current folder (%.0f%%)", totalFoldersProcessed, processedFiles , totalFiles, percentageDone);
-                textCurrentFile.setText(processedString);
+                final String finalProcessedString = processedString;
+                Platform.runLater(() -> {
+                    textCurrentFile.setText(finalProcessedString);
+                });
+
+                // Update progress bar - create final copies for lambda
+                final double progress = (double) processedFiles / totalFiles;
+                Platform.runLater(() -> {
+                    progressBar.setProgress(progress);
+                });
 
                 try {
                     if (showPreviewCheckBox.isSelected()) {
-                        imageView.setImage(null);
-                        FileInputStream input = new FileInputStream(file.getAbsolutePath());
-                        Image image = new Image(input);
-                        imageView.setImage(image);
-                        input.close();
+                        try {
+                            FileInputStream input = new FileInputStream(file.getAbsolutePath());
+                            Image image = new Image(input);
+                            input.close();
+
+                            Platform.runLater(() -> {
+                                imageView.setImage(null);
+                                imageView.setImage(image);
+                            });
+                        } catch (IOException e) {
+                            System.err.println("Error loading image preview: " + e.getMessage());
+                        }
                     }
 
                     final boolean excludePreEnhancedFiles = (fileName.contains("megapixel") || fileName.contains("gigapixel") || fileName.contains("resize") || fileName.contains("edit") || fileName.contains("final") || fileName.contains("ignore"));
@@ -423,11 +503,14 @@ public class Main extends Application {
         modelComboBox.setDisable(false);
         closeButton.setText("Exit");
         showSourceFolderButton.setDisable(true);
-        showDestinyFolderButton.setDisable(true);
+        showDestinationFolderButton.setDisable(true);
         pauseProcessButton.setDisable(true);
         textCurrentFolder.setText("Current Folder:");
         textCurrentFile.setText("Current File:");
         imageView.setImage(null);
+
+        // Hide progress bar
+        progressBar.setVisible(false);
     }
 
     private void initControls() {
@@ -444,7 +527,11 @@ public class Main extends Application {
         modelComboBox.setDisable(true);
         closeButton.setText("Cancel");
         showSourceFolderButton.setDisable(false);
-        showDestinyFolderButton.setDisable(false);
+        showDestinationFolderButton.setDisable(false);
         pauseProcessButton.setDisable(false);
+
+        // Show progress bar
+        progressBar.setVisible(true);
+        progressBar.setProgress(0);
     }
 }
