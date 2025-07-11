@@ -9,6 +9,11 @@ public class ImageProcessor {
     private File realesrganExecutable;
     private File cwebpExecutable;
 
+    // Getter for cwebpExecutable
+    public File getCwebpExecutable() {
+        return cwebpExecutable;
+    }
+
     public ImageProcessor(String currentDir) {
         // Full paths to executables for each OS
         String osName = System.getProperty("os.name").toLowerCase();
