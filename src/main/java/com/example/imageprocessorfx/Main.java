@@ -52,12 +52,32 @@ public class Main extends Application {
     private Label textCurrentFile;
     private ProgressBar progressBar;
 
+    // Placeholder image for WebP files
+    private Image webpPlaceholderImage;
+
 
 
     private boolean deleteSourceFile = false;
     private boolean includeWebpFiles = false;
 
     private int totalFoldersProcessed = 1;
+
+    // Helper method to create a placeholder image for WebP files
+    private void createPlaceholderWebpImage() {
+        // Create a simple colored rectangle with text
+        javafx.scene.canvas.Canvas canvas = new javafx.scene.canvas.Canvas(100, 150);
+        javafx.scene.canvas.GraphicsContext gc = canvas.getGraphicsContext2D();
+        gc.setFill(javafx.scene.paint.Color.LIGHTBLUE);
+        gc.fillRect(0, 0, 100, 150);
+        gc.setFill(javafx.scene.paint.Color.BLACK);
+        gc.fillText("WebP", 30, 75);
+        gc.fillText("Preview", 25, 90);
+
+        // Convert canvas to image
+        javafx.scene.image.WritableImage writableImage = new javafx.scene.image.WritableImage((int)canvas.getWidth(), (int)canvas.getHeight());
+        canvas.snapshot(null, writableImage);
+        webpPlaceholderImage = writableImage;
+    }
 
     public static void main(String[] args) {
         launch(args);
@@ -77,6 +97,30 @@ public class Main extends Application {
 
         int horizontalSize;
         int verticalSize = 600; // Increased to accommodate the new layout
+
+        // Create a placeholder image for WebP files
+        try {
+            // Check if the WebP icon resource exists
+            java.io.InputStream iconStream = getClass().getResourceAsStream("/webp-icon.png");
+
+            if (iconStream != null) {
+                // If the resource exists, load it
+                webpPlaceholderImage = new Image(iconStream);
+                iconStream.close();
+            } else {
+                // If the resource doesn't exist, create a placeholder directly
+                createPlaceholderWebpImage();
+            }
+
+            // If the image is null or has an error, create a placeholder
+            if (webpPlaceholderImage == null || webpPlaceholderImage.isError()) {
+                createPlaceholderWebpImage();
+            }
+        } catch (Exception e) {
+            System.err.println("Error creating WebP placeholder image: " + e.getMessage());
+            // Ensure we always have a placeholder image even if an error occurs
+            createPlaceholderWebpImage();
+        }
 
         primaryStage.setTitle("Improve Images Quality And Optimize Size With AI");
 
@@ -413,14 +457,47 @@ public class Main extends Application {
                 try {
                     if (showPreviewCheckBox.isSelected()) {
                         try {
-                            FileInputStream input = new FileInputStream(file.getAbsolutePath());
-                            Image image = new Image(input);
-                            input.close();
+                            if (file.getName().toLowerCase().endsWith(".webp")) {
+                                // For WebP files, we'll use a special approach
+                                // First, try to load it directly - this might work on some systems
+                                try {
+                                    FileInputStream input = new FileInputStream(file.getAbsolutePath());
+                                    Image image = new Image(input);
+                                    input.close();
 
-                            Platform.runLater(() -> {
-                                imageView.setImage(null);
-                                imageView.setImage(image);
-                            });
+                                    if (!image.isError()) {
+                                        // If the image loaded successfully, display it
+                                        Platform.runLater(() -> {
+                                            imageView.setImage(null);
+                                            imageView.setImage(image);
+                                        });
+                                    } else {
+                                        // If there was an error loading the WebP image, show the placeholder
+                                        Platform.runLater(() -> {
+                                            imageView.setImage(null);
+                                            imageView.setImage(webpPlaceholderImage);
+                                            textCurrentFile.setText(textCurrentFile.getText() + " (WebP preview using placeholder)");
+                                        });
+                                    }
+                                } catch (Exception e) {
+                                    // If there was an exception loading the WebP image, show the placeholder
+                                    Platform.runLater(() -> {
+                                        imageView.setImage(null);
+                                        imageView.setImage(webpPlaceholderImage);
+                                        textCurrentFile.setText(textCurrentFile.getText() + " (WebP preview using placeholder)");
+                                    });
+                                }
+                            } else {
+                                // For other supported formats, load directly
+                                FileInputStream input = new FileInputStream(file.getAbsolutePath());
+                                Image image = new Image(input);
+                                input.close();
+
+                                Platform.runLater(() -> {
+                                    imageView.setImage(null);
+                                    imageView.setImage(image);
+                                });
+                            }
                         } catch (IOException e) {
                             System.err.println("Error loading image preview: " + e.getMessage());
                         }
