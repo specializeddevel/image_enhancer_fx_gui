@@ -70,8 +70,8 @@ public class Main extends Application {
         gc.setFill(javafx.scene.paint.Color.LIGHTBLUE);
         gc.fillRect(0, 0, 100, 150);
         gc.setFill(javafx.scene.paint.Color.BLACK);
-        gc.fillText("WebP", 30, 75);
-        gc.fillText("Preview", 25, 90);
+        gc.fillText("Preview", 30, 75);
+        gc.fillText("Not Supported", 25, 90);
 
         // Convert canvas to image
         javafx.scene.image.WritableImage writableImage = new javafx.scene.image.WritableImage((int)canvas.getWidth(), (int)canvas.getHeight());
