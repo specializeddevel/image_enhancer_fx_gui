@@ -38,6 +38,7 @@ public class Main extends Application {
     private CheckBox showPreviewCheckBox;
     private CheckBox deleteSourceFileCheckBox;
     private CheckBox includeWebpFilesCheckBox;
+    private CheckBox darkThemeCheckBox;
 
     private Button processButton;
     private Button browseInputButton;
@@ -59,8 +60,13 @@ public class Main extends Application {
 
     private boolean deleteSourceFile = false;
     private boolean includeWebpFiles = false;
+    private boolean isDarkTheme = false;
 
     private int totalFoldersProcessed = 1;
+
+    // CSS paths for light and dark themes
+    private String lightThemeCssPath;
+    private String darkThemeCssPath;
 
     // Helper method to create a placeholder image for WebP files
     private void createPlaceholderWebpImage() {
@@ -85,12 +91,30 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        // Load CSS
-        String cssPath = getClass().getResource("/styles/application.css").toExternalForm();
+        // Initialize CSS paths
+        lightThemeCssPath = getClass().getResource("/styles/application.css").toExternalForm();
+        darkThemeCssPath = getClass().getResource("/styles/dark-theme.css").toExternalForm();
+
         createGUI(primaryStage);
 
-        // Apply CSS to the scene
-        primaryStage.getScene().getStylesheets().add(cssPath);
+        // Apply initial CSS theme to the scene
+        if (isDarkTheme) {
+            primaryStage.getScene().getStylesheets().add(darkThemeCssPath);
+        } else {
+            primaryStage.getScene().getStylesheets().add(lightThemeCssPath);
+        }
+    }
+
+    // Method to switch between light and dark themes
+    private void toggleTheme(Stage stage) {
+        Scene scene = stage.getScene();
+        scene.getStylesheets().clear();
+
+        if (isDarkTheme) {
+            scene.getStylesheets().add(darkThemeCssPath);
+        } else {
+            scene.getStylesheets().add(lightThemeCssPath);
+        }
     }
 
     private void createGUI(Stage primaryStage) {
@@ -235,8 +259,17 @@ public class Main extends Application {
             }
         });
         includeWebpFilesCheckBox.setSelected(true);
+
+        // Create dark theme toggle
+        darkThemeCheckBox = new CheckBox("Dark Theme");
+        darkThemeCheckBox.setSelected(isDarkTheme);
+        darkThemeCheckBox.setOnAction(e -> {
+            isDarkTheme = darkThemeCheckBox.isSelected();
+            toggleTheme(primaryStage);
+        });
+
         checkBoxes1.getChildren().addAll(deleteSourceFileCheckBox, subfoldersCheckBox, includeWebpFilesCheckBox);
-        checkBoxes2.getChildren().addAll(upsaceleCheckBox, convertToWebpCheckBox, showPreviewCheckBox);
+        checkBoxes2.getChildren().addAll(upsaceleCheckBox, convertToWebpCheckBox, showPreviewCheckBox, darkThemeCheckBox);
 
         HBox bottomButtons = new HBox(10);
         // Button to start processing/
@@ -431,7 +464,7 @@ public class Main extends Application {
                 }
             }
 
-            //Verify if the file extension is .webp and status of the checkbox that include webp files in the processing
+            //Verify if the file extension is .webp and the status of the checkbox that include webp files in the processing
             includeWebpFiles = includeWebpFilesCheckBox.isSelected() || !file.getName().endsWith("webp");
 
             //Original file must have one of these extension: jpg, jpeg, png, webp
@@ -586,7 +619,7 @@ public class Main extends Application {
         textCurrentFile.setText("Current File:");
         imageView.setImage(null);
 
-        // Hide progress bar
+        // Hide the progress bar
         progressBar.setVisible(false);
     }
 
@@ -607,7 +640,7 @@ public class Main extends Application {
         showDestinationFolderButton.setDisable(false);
         pauseProcessButton.setDisable(false);
 
-        // Show progress bar
+        // Show the progress bar
         progressBar.setVisible(true);
         progressBar.setProgress(0);
     }
