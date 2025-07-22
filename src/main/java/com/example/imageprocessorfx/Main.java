@@ -15,10 +15,15 @@ import javafx.scene.layout.*;
 import javafx.geometry.Insets;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.util.Pair;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -426,174 +431,185 @@ public class Main extends Application {
         }).start();
     }
 
-    private void processFolder(File inputDir, File outputDir, String model, boolean processSubfolders) throws IOException, InterruptedException {
+    private void processFolder(File rootInput, File rootOutput, String model,
+                               boolean processSubfolders) throws IOException, InterruptedException {
+
         String currentDir = System.getProperty("user.dir");
+        boolean convertToWebp   = convertToWebpCheckBox.isSelected();
+        boolean upscalePicture  = upsaceleCheckBox.isSelected();
 
-                boolean convertToWebp = convertToWebpCheckBox.isSelected();
-        boolean upscalePicture = upsaceleCheckBox.isSelected();
+        // Queue that save pairs (carpetaEntrada , carpetaSalida)
+        Queue<Pair<File, File>> queue = new LinkedList<>();
+        queue.add(new Pair<>(rootInput, rootOutput));
 
-        if (!outputDir.exists()) outputDir.mkdirs();
+        while (!queue.isEmpty()) {
+            Pair<File, File> pair = queue.poll();
+            File inputDir  = pair.getKey();
+            File outputDir = pair.getValue();
 
-        File[] files = inputDir.listFiles();
-        if (files == null) {
-            return;
-        }
-        int totalFiles = files.length;
-        int processedFiles = 1;
-        double percentageDone = (1/(double)totalFiles)*100;
-        String processedString;
+            if (!outputDir.exists()) {
+                outputDir.mkdirs();
+            }
 
-        Platform.runLater(() -> {
-            textCurrentFolder.setText("Current Folder: " + inputDir.getName());
-            showSourceFolderButton.setOnAction(e -> FileManager.openFolder(inputDir.getAbsolutePath()));
-            showDestinationFolderButton.setOnAction(e -> FileManager.openFolder(outputDir.getAbsolutePath()));
-        });
+            // --- Update UI ----------------------------------------------------
+            Platform.runLater(() -> {
+                textCurrentFolder.setText("Current Folder: " + inputDir.getName());
+                showSourceFolderButton.setOnAction(e ->
+                        FileManager.openFolder(inputDir.getAbsolutePath()));
+                showDestinationFolderButton.setOnAction(e ->
+                        FileManager.openFolder(outputDir.getAbsolutePath()));
+            });
 
-        for (File file : files) {
+            // --- List files and folders --------------------------------------
+            File[] files = inputDir.listFiles();
+            if (files == null) continue;
 
-            if (!this.flag) { break; }
+            // Filter valid files
+            List<File> imageFiles = new ArrayList<>();
+            List<File> subDirs    = new ArrayList<>();
 
-            while (isPaused.get()) {
-                try {
-                    System.out.println("Waiting ...");
-                    Thread.sleep(500); // Wait while process is paused
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    System.out.println("Interrupted thread.");
-                    return;
+            for (File f : files) {
+                if (f.isFile()) {
+                    String name = f.getName().toLowerCase();
+                    if ((name.endsWith(".jpg")  || name.endsWith(".jpeg") ||
+                            name.endsWith(".png")   || name.endsWith(".webp"))) {
+                        imageFiles.add(f);
+                    }
+                } else if (processSubfolders && f.isDirectory()) {
+                    subDirs.add(f);
                 }
             }
 
-            //Verify if the file extension is .webp and the status of the checkbox that include webp files in the processing
-            includeWebpFiles = includeWebpFilesCheckBox.isSelected() || !file.getName().endsWith("webp");
+            // --- Process files -------------------------------------------------
+            int totalFiles = imageFiles.size();
+            int processed  = 0;
 
-            //Original file must have one of these extension: jpg, jpeg, png, webp
-            String fileName = file.getName().toLowerCase();
-            if (file.isFile() && includeWebpFiles && (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg") || fileName.endsWith(".png") || fileName.endsWith(".webp"))) {
+            for (File file : imageFiles) {
 
-                File outputFile = new File(outputDir, file.getName().replaceFirst("\\.[^.]+$", "_improved.png"));
-                File compressedFile = new File(outputDir, file.getName().replaceFirst("\\.[^.]+$", "_final.webp"));
+                if (!flag) return;                 // Cancelado
+                while (isPaused.get()) {           // Pausado
+                    Thread.sleep(500);
+                }
 
-                percentageDone = ((double) processedFiles/ (double) totalFiles)*100;
-                processedString = String.format("Total folders processed: %d, processing file %d of %d in current folder (%.0f%%)", totalFoldersProcessed, processedFiles , totalFiles, percentageDone);
-                final String finalProcessedString = processedString;
-                Platform.runLater(() -> {
-                    textCurrentFile.setText(finalProcessedString);
-                });
-
-                // Update progress bar - create final copies for lambda
-                final double progress = (double) processedFiles / totalFiles;
+                processed++;
+                double progress = (double) processed / totalFiles;
+                int finalProcessed = processed;
                 Platform.runLater(() -> {
                     progressBar.setProgress(progress);
+                    textCurrentFile.setText(String.format(
+                            "Total folders processed: %d, file %d/%d (%.0f%%)",
+                            totalFoldersProcessed, finalProcessed, totalFiles, progress * 100));
                 });
 
-                try {
-                    if (showPreviewCheckBox.isSelected()) {
-                        try {
-                            if (file.getName().toLowerCase().endsWith(".webp")) {
-                                // For WebP files, we'll use a special approach
-                                // First, try to load it directly - this might work on some systems
-                                try {
-                                    FileInputStream input = new FileInputStream(file.getAbsolutePath());
-                                    Image image = new Image(input);
-                                    input.close();
-
-                                    if (!image.isError()) {
-                                        // If the image loaded successfully, display it
-                                        Platform.runLater(() -> {
-                                            imageView.setImage(null);
-                                            imageView.setImage(image);
-                                        });
-                                    } else {
-                                        // If there was an error loading the WebP image, show the placeholder
-                                        Platform.runLater(() -> {
-                                            imageView.setImage(null);
-                                            imageView.setImage(webpPlaceholderImage);
-                                            textCurrentFile.setText(textCurrentFile.getText() + " (WebP preview using placeholder)");
-                                        });
-                                    }
-                                } catch (Exception e) {
-                                    // If there was an exception loading the WebP image, show the placeholder
-                                    Platform.runLater(() -> {
-                                        imageView.setImage(null);
-                                        imageView.setImage(webpPlaceholderImage);
-                                        textCurrentFile.setText(textCurrentFile.getText() + " (WebP preview using placeholder)");
-                                    });
-                                }
-                            } else {
-                                // For other supported formats, load directly
-                                FileInputStream input = new FileInputStream(file.getAbsolutePath());
-                                Image image = new Image(input);
-                                input.close();
-
-                                Platform.runLater(() -> {
-                                    imageView.setImage(null);
-                                    imageView.setImage(image);
-                                });
-                            }
-                        } catch (IOException e) {
-                            System.err.println("Error loading image preview: " + e.getMessage());
-                        }
-                    }
-
-                    final boolean excludePreEnhancedFiles = (fileName.contains("megapixel") || fileName.contains("gigapixel") || fileName.contains("resize") || fileName.contains("edit") || fileName.contains("final") || fileName.contains("ignore"));
-
-                    ImageProcessor imageProcessor = new ImageProcessor(currentDir);
-                    // Improve the image
-                    if(!excludePreEnhancedFiles) {
-                        if(upscalePicture && flag) imageProcessor.upscaleImage(file,outputFile,model,conversionProcessRef);
-                    }
-                    // Convert to Webp
-                    if (convertToWebp && flag) imageProcessor.convertToWebP(file, outputFile, compressedFile, conversionProcessRef, upscalePicture, excludePreEnhancedFiles);
-                    // Delete temporary improved 4x PNG file
-                    if(!excludePreEnhancedFiles) {
-                        if ((upscalePicture && convertToWebp && flag))
-                            FileManager.deleteFile(outputFile.getAbsoluteFile());
-                        // Delete original source file
-                        if ((deleteSourceFile && (upscalePicture || convertToWebp) && flag))
-                            FileManager.deleteFile(file.getAbsoluteFile());
-                    } else {
-                        if ((deleteSourceFile && (upscalePicture || convertToWebp) && flag))
-                            FileManager.deleteFile(file.getAbsoluteFile());
-                        else
-                            if ((!deleteSourceFile && (upscalePicture || convertToWebp) && flag))
-                                FileManager.copyFile(file, outputDir);
-                            else {
-                                FileManager.copyFile(file, outputDir);
-                                FileManager.deleteFile(file.getAbsoluteFile());
-                            }
-                    }
-
-                } catch (IOException e) {
-                    System.err.println("IO error: " + e.getMessage());
-                    e.printStackTrace();
-                    throw e;
-                } catch (InterruptedException e) {
-                    System.err.println("The process was interrupted: " + e.getMessage());
-                    e.printStackTrace();
-                    Thread.currentThread().interrupt();
-                    throw e;
-                } catch (RuntimeException e) {
-                    System.err.println("RuntimeException: " + e.getMessage());
-                    e.printStackTrace();
-                    throw e;
-                } catch (Error e) {
-                    // Catch fatal errors like OutOfMemoryError
-                    System.err.println("Critical system error: " + e.getMessage());
-                    e.printStackTrace();
-                    throw e;
-                } catch (Exception e) {
-                    System.err.println("Unexpected exception: " + e.getMessage());
-                    e.printStackTrace();
-                    throw e;
-                }
-                // Update progress bar
-                processedFiles++;
-            } else if (processSubfolders && file.isDirectory()) {
-                totalFoldersProcessed++;
-                Thread.sleep(50);
-                processFolder(file, new File(outputDir, file.getName()), model, true);
+                // Rest of logic (Preview, Upscale, Conversion, etc.)
+                processSingleFile(file, outputDir, currentDir, model,
+                        convertToWebp, upscalePicture);
             }
+
+            // --- Enqueue subfolders ---------------------------------------------
+            if (processSubfolders) {
+                for (File subDir : subDirs) {
+                    totalFoldersProcessed++;
+                    queue.add(new Pair<>(subDir,
+                            new File(outputDir, subDir.getName())));
+                }
+            }
+        }
+    }
+
+    /* -------------------------------------------------------------------------- */
+    /*  Auxiliary method containing all individual files processing               */
+    /* -------------------------------------------------------------------------- */
+    private void processSingleFile(File file, File outputDir,
+                                   String currentDir, String model,
+                                   boolean convertToWebp, boolean upscalePicture)
+            throws IOException, InterruptedException {
+
+        includeWebpFiles = includeWebpFilesCheckBox.isSelected()
+                || !file.getName().toLowerCase().endsWith("webp");
+
+        if (!includeWebpFiles) return;
+
+        File outputFile   = new File(outputDir,
+                file.getName().replaceFirst("\\.[^.]+$", "_improved.png"));
+        File compressedFile = new File(outputDir,
+                file.getName().replaceFirst("\\.[^.]+$", "_final.webp"));
+
+        // Preview (If it is activated)
+        if (showPreviewCheckBox.isSelected()) {
+            showPreview(file);
+        }
+
+        String fileName = file.getName().toLowerCase();
+        boolean excludePreEnhanced = fileName.contains("megapixel") ||
+                fileName.contains("gigapixel") ||
+                fileName.contains("resize") ||
+                fileName.contains("edit") ||
+                fileName.contains("final") ||
+                fileName.contains("ignore");
+
+        ImageProcessor ip = new ImageProcessor(currentDir);
+
+        if (!excludePreEnhanced) {
+            if (upscalePicture && flag)
+                ip.upscaleImage(file, outputFile, model, conversionProcessRef);
+        }
+
+        // Conversion to Webp
+        if (convertToWebp && flag) {
+            ip.convertToWebP(file, outputFile, compressedFile, conversionProcessRef,
+                    upscalePicture, excludePreEnhanced);
+        }
+
+        // Delete temporary / original files
+        manageCleanup(file, outputFile, compressedFile, excludePreEnhanced);
+    }
+
+    /* -------------------------------------------------------------------------- */
+    /*  Auxiliary Methods (preview and clean)                                   */
+    /* -------------------------------------------------------------------------- */
+    private void showPreview(File file) {
+        try {
+            Image img;
+            if (file.getName().toLowerCase().endsWith(".webp")) {
+                try (FileInputStream in = new FileInputStream(file)) {
+                    img = new Image(in);
+                    if (img.isError()) img = webpPlaceholderImage;
+                }
+            } else {
+                try (FileInputStream in = new FileInputStream(file)) {
+                    img = new Image(in);
+                }
+            }
+            final Image finalImg = img;
+            Platform.runLater(() -> imageView.setImage(finalImg));
+        } catch (IOException ex) {
+            System.err.println("Error showing preview: " + ex.getMessage());
+        }
+    }
+
+    private void manageCleanup(File source, File improvedPng, File webp,
+                               boolean excludePreEnhanced) {
+        try {
+            if (!excludePreEnhanced) {
+                if (convertToWebpCheckBox.isSelected()
+                        && upsaceleCheckBox.isSelected()
+                        && improvedPng.exists()) {
+                    FileManager.deleteFile(improvedPng);
+                }
+                if (deleteSourceFile
+                        && (convertToWebpCheckBox.isSelected() || upsaceleCheckBox.isSelected())) {
+                    FileManager.deleteFile(source);
+                }
+            } else {
+                if (deleteSourceFile) {
+                    FileManager.deleteFile(source);
+                } else if (!deleteSourceFile && upsaceleCheckBox.isSelected()) {
+                    FileManager.copyFile(source, improvedPng.getParentFile());
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error during cleanup: " + e.getMessage());
         }
     }
 
