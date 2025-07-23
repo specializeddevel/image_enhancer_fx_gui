@@ -465,7 +465,8 @@ public class Main extends Application {
                 outputDir.mkdirs();
             }
 
-
+            final long inSize = folderSize(inputDir);
+            System.out.println("Input folder size: " + bytesToMiB(inSize) + " MiB");
 
 
             // --- Update UI ----------------------------------------------------
@@ -476,7 +477,7 @@ public class Main extends Application {
                 showDestinationFolderButton.setOnAction(e ->
                         FileManager.openFolder(outputDir.getAbsolutePath()));
                 summaryPane.getChildren().add(
-                        new Label("Processing Folder: " + inputDir.getName()));
+                        new Label("Folder size: " + bytesToMiB(inSize) + " MiB  |  Name: " + inputDir.getName()));
             });
 
             // --- List files and folders --------------------------------------
@@ -499,14 +500,16 @@ public class Main extends Application {
                 }
             }
 
+
+
             // --- Process files -------------------------------------------------
             int totalFiles = imageFiles.size();
             int processed  = 0;
 
             for (File file : imageFiles) {
 
-                if (!flag) return;                 // Cancelado
-                while (isPaused.get()) {           // Pausado
+                if (!flag) return;                 // Canceled
+                while (isPaused.get()) {           // Paused
                     Thread.sleep(500);
                 }
 
@@ -525,8 +528,8 @@ public class Main extends Application {
                         convertToWebp, upscalePicture);
             }
 
-            // --- Resumen de la carpeta -----------------------------------------------
-            final long inSize = folderSize(inputDir);
+            // --- Folder resume -----------------------------------------------
+
             final long outSize = folderSize(outputDir);
             final long saved = inSize - outSize;
             Platform.runLater(() -> {
@@ -535,11 +538,11 @@ public class Main extends Application {
                         "  |  Final: " + bytesToMiB(outSize) + " MiB" +
                         "  |  Δ: " + bytesToMiB(saved) + " MiB");
                 text.setStyle(saved < 0 ? "-fx-fill: red;" : "-fx-fill: green;");
-                text.setWrappingWidth(summaryPane.getWidth() - 20);  // Ajusta el ancho del texto
+                text.setWrappingWidth(summaryPane.getWidth() - 20);  // Fix with of text
 
                 ScrollPane scrollPane = new ScrollPane(text);
                 scrollPane.setPrefHeight(40);  // Altura del scrollPane
-                scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);  // Barra horizontal si es necesario
+                scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);  // Horizontal bar if it is necessary
 
                 summaryPane.getChildren().add(scrollPane);
             });
