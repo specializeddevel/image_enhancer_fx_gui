@@ -466,7 +466,6 @@ public class Main extends Application {
             }
 
             final long inSize = folderSize(inputDir);
-            System.out.println("Input folder size: " + bytesToMiB(inSize) + " MiB");
 
 
             // --- Update UI ----------------------------------------------------
@@ -546,6 +545,10 @@ public class Main extends Application {
 
                 summaryPane.getChildren().add(scrollPane);
             });
+
+            System.out.println("Input folder size: " + bytesToMiB(inSize) + " MiB");
+            System.out.println("Output folder size: " + bytesToMiB(outSize) + " MiB");
+            System.out.println("*********************************************************");
 
             // --- Enqueue subfolders ---------------------------------------------
             if (processSubfolders) {
