@@ -61,9 +61,6 @@ public class Main extends Application {
     // Placeholder image for WebP files
     private Image webpPlaceholderImage;
 
-    //Summary panel showing the sizes, below the progress bar
-    private VBox summaryPane = new VBox(5);
-
     private boolean deleteSourceFile = false;
     private boolean includeWebpFiles = false;
     private boolean isDarkTheme = false;
@@ -343,15 +340,6 @@ public class Main extends Application {
         progressBar.setPrefWidth(300);
         progressBar.setVisible(false);
 
-        summaryPane.setPadding(new Insets(5));
-        summaryPane.setPrefHeight(80);          // scroll if it's full
-        summaryPane.setStyle("-fx-border-color: gray; -fx-border-radius: 4;");
-
-        ScrollPane scroll = new ScrollPane(summaryPane);
-        scroll.setPrefHeight(80);
-        scroll.setFitToWidth(true);
-        scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-
         // Add everything to the layout
         layout1.getChildren().addAll(
             titleLabel,
@@ -365,7 +353,6 @@ public class Main extends Application {
             new Separator(),
             statusLabel,
             progressBar,
-            scroll,
             textCurrentFolder, 
             textCurrentFile, 
             bottomButtons
@@ -453,8 +440,6 @@ public class Main extends Application {
         Queue<Pair<File, File>> queue = new LinkedList<>();
         queue.add(new Pair<>(rootInput, rootOutput));
 
-        Platform.runLater(() -> summaryPane.getChildren().clear());  //Clear pannel
-
         while (!queue.isEmpty()) {
             Pair<File, File> pair = queue.poll();
             File inputDir  = pair.getKey();
@@ -475,8 +460,7 @@ public class Main extends Application {
                         FileManager.openFolder(inputDir.getAbsolutePath()));
                 showDestinationFolderButton.setOnAction(e ->
                         FileManager.openFolder(outputDir.getAbsolutePath()));
-                summaryPane.getChildren().add(
-                        new Label("Folder size: " + bytesToMiB(inSize) + " MiB  |  Name: " + inputDir.getName()));
+                System.out.println("Folder size: " + bytesToMiB(inSize) + " MiB  |  Name: " + inputDir.getName());
             });
 
             // --- List files and folders --------------------------------------
@@ -532,18 +516,11 @@ public class Main extends Application {
             final long outSize = folderSize(outputDir);
             final long saved = inSize - outSize;
             Platform.runLater(() -> {
-                Text text = new Text("Folder: " + inputDir.getName() +
+                String text = "Folder: " + inputDir.getName() +
                         "  |  Original: " + bytesToMiB(inSize) + " MiB" +
                         "  |  Final: " + bytesToMiB(outSize) + " MiB" +
-                        "  |  Δ: " + bytesToMiB(saved) + " MiB");
-                text.setStyle(saved < 0 ? "-fx-fill: red;" : "-fx-fill: green;");
-                text.setWrappingWidth(summaryPane.getWidth() - 20);  // Fix with of text
-
-                ScrollPane scrollPane = new ScrollPane(text);
-                scrollPane.setPrefHeight(40);  // Altura del scrollPane
-                scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);  // Horizontal bar if it is necessary
-
-                summaryPane.getChildren().add(scrollPane);
+                        "  |  Δ: " + bytesToMiB(saved) + " MiB";
+                System.out.println(text);
             });
 
             System.out.println("Input folder size: " + bytesToMiB(inSize) + " MiB");
