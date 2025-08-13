@@ -66,7 +66,7 @@ public class Main extends Application {
     private boolean isDarkTheme = true;
 
     private int totalFoldersProcessed = 1;
-    private long totalMBSaved = 0;
+    private double totalMBSaved = 0;
 
     // CSS paths for light and dark themes
     private String lightThemeCssPath;
@@ -452,19 +452,6 @@ public class Main extends Application {
                 outputDir.mkdirs();
             }
 
-            final long inSize = folderSize(inputDir);
-
-
-            // --- Update UI ----------------------------------------------------
-            Platform.runLater(() -> {
-                textCurrentFolder.setText("Current Folder: " + inputDir.getName());
-                showSourceFolderButton.setOnAction(e ->
-                        FileManager.openFolder(inputDir.getAbsolutePath()));
-                showDestinationFolderButton.setOnAction(e ->
-                        FileManager.openFolder(outputDir.getAbsolutePath()));
-                System.out.println("Folder size: " + bytesToMiB(inSize) + " MiB  |  Name: " + inputDir.getName());
-            });
-
             // --- List files and folders --------------------------------------
             File[] files = inputDir.listFiles();
             if (files == null) continue;
@@ -484,6 +471,26 @@ public class Main extends Application {
                     subDirs.add(f);
                 }
             }
+
+            // Compute input size only for files directly in this folder that will be processed
+            List<File> processedFiles = new ArrayList<>();
+            boolean includeWebpLocal = includeWebpFilesCheckBox.isSelected();
+            for (File f : imageFiles) {
+                String lower = f.getName().toLowerCase();
+                boolean include = includeWebpLocal || !lower.endsWith(".webp");
+                if (include) processedFiles.add(f);
+            }
+            final long inSize = processedFiles.stream().mapToLong(File::length).sum();
+
+            // --- Update UI ----------------------------------------------------
+            Platform.runLater(() -> {
+                textCurrentFolder.setText("Current Folder: " + inputDir.getName());
+                showSourceFolderButton.setOnAction(e ->
+                        FileManager.openFolder(inputDir.getAbsolutePath()));
+                showDestinationFolderButton.setOnAction(e ->
+                        FileManager.openFolder(outputDir.getAbsolutePath()));
+                System.out.println("Folder size (direct files only): " + bytesToMiB(inSize) + " MiB  |  Name: " + inputDir.getName());
+            });
             // --- Process files -------------------------------------------------
             int totalFiles = imageFiles.size();
             int processed  = 0;
@@ -511,24 +518,35 @@ public class Main extends Application {
             }
 
             // --- Folder resume -----------------------------------------------
+            long outSize = 0L;
+            for (File src : processedFiles) {
+                String base = src.getName();
+                File webp = new File(outputDir, base.replaceFirst("\\.[^.]+$", "_final.webp"));
+                File improved = new File(outputDir, base.replaceFirst("\\.[^.]+$", "_improved.png"));
+                if (convertToWebp && webp.exists()) {
+                    outSize += webp.length();
+                } else if (improved.exists()) {
+                    outSize += improved.length();
+                }
+            }
 
-            final long outSize = folderSize(outputDir);
-            final long saved = inSize - outSize;
-            totalMBSaved += saved / (1024 * 1024);
+            final long finalOutSize = outSize;
+            final long saved = inSize - finalOutSize;
+            totalMBSaved += saved / (1024 * 1024.0);
 
-            long finalTotalMBSaved = totalMBSaved;
+            double finalTotalMBSaved = totalMBSaved;
             Platform.runLater(() -> {
                 String text = "Folder: " + inputDir.getName() +
                         "  |  Original: " + bytesToMiB(inSize) + " MiB" +
-                        "  |  Final: " + bytesToMiB(outSize) + " MiB" +
+                        "  |  Final: " + bytesToMiB(finalOutSize) + " MiB" +
                         "  |  Δ: " + bytesToMiB(saved) + " MiB" +
-                        "  |  Total MB Saved: " + Long.toString(finalTotalMBSaved) + " MiB";
+                        "  |  Total MB Saved: " + Double.toString(finalTotalMBSaved) + " MiB";
                 System.out.println(text);
             });
 
-            System.out.println("Input folder size: " + bytesToMiB(inSize) + " MiB");
-            System.out.println("Output folder size: " + bytesToMiB(outSize) + " MiB");
-            System.out.println("Total MiB Saved: " + Long.toString(finalTotalMBSaved) + " MiB");
+            System.out.println("Input folder size (direct files): " + bytesToMiB(inSize) + " MiB");
+            System.out.println("Output folder size (direct outputs): " + bytesToMiB(finalOutSize) + " MiB");
+            System.out.println("Total MiB Saved: " + Double.toString(finalTotalMBSaved) + " MiB");
             System.out.println("*********************************************************");
 
             // --- Enqueue subfolders ---------------------------------------------
