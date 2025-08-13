@@ -63,9 +63,10 @@ public class Main extends Application {
 
     private boolean deleteSourceFile = false;
     private boolean includeWebpFiles = false;
-    private boolean isDarkTheme = false;
+    private boolean isDarkTheme = true;
 
     private int totalFoldersProcessed = 1;
+    private long totalMBSaved = 0;
 
     // CSS paths for light and dark themes
     private String lightThemeCssPath;
@@ -222,6 +223,7 @@ public class Main extends Application {
         checkBoxes1.setAlignment(Pos.CENTER_LEFT);
         HBox checkBoxes2 = new HBox(20);
         checkBoxes2.setAlignment(Pos.CENTER_LEFT);
+
 
         deleteSourceFileCheckBox = new CheckBox("Delete Source Files");
         subfoldersCheckBox = new CheckBox("Process Subfolders");
@@ -482,9 +484,6 @@ public class Main extends Application {
                     subDirs.add(f);
                 }
             }
-
-
-
             // --- Process files -------------------------------------------------
             int totalFiles = imageFiles.size();
             int processed  = 0;
@@ -515,16 +514,21 @@ public class Main extends Application {
 
             final long outSize = folderSize(outputDir);
             final long saved = inSize - outSize;
+            totalMBSaved += saved / (1024 * 1024);
+
+            long finalTotalMBSaved = totalMBSaved;
             Platform.runLater(() -> {
                 String text = "Folder: " + inputDir.getName() +
                         "  |  Original: " + bytesToMiB(inSize) + " MiB" +
                         "  |  Final: " + bytesToMiB(outSize) + " MiB" +
-                        "  |  Δ: " + bytesToMiB(saved) + " MiB";
+                        "  |  Δ: " + bytesToMiB(saved) + " MiB" +
+                        "  |  Total MB Saved: " + Long.toString(finalTotalMBSaved) + " MiB";
                 System.out.println(text);
             });
 
             System.out.println("Input folder size: " + bytesToMiB(inSize) + " MiB");
             System.out.println("Output folder size: " + bytesToMiB(outSize) + " MiB");
+            System.out.println("Total MiB Saved: " + Long.toString(finalTotalMBSaved) + " MiB");
             System.out.println("*********************************************************");
 
             // --- Enqueue subfolders ---------------------------------------------
@@ -701,5 +705,6 @@ public class Main extends Application {
         // Show the progress bar
         progressBar.setVisible(true);
         progressBar.setProgress(0);
+        totalMBSaved = 0;
     }
 }
