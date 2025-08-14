@@ -67,6 +67,8 @@ public class Main extends Application {
 
     private int totalFoldersProcessed = 1;
     private double totalMBSaved = 0;
+    private long totalBitesSaved = 0;
+    private double totalPercentSaved = 0;
 
     // CSS paths for light and dark themes
     private String lightThemeCssPath;
@@ -463,9 +465,16 @@ public class Main extends Application {
             for (File f : files) {
                 if (f.isFile()) {
                     String name = f.getName().toLowerCase();
-                    if ((name.endsWith(".jpg")  || name.endsWith(".jpeg") ||
-                            name.endsWith(".png")   || name.endsWith(".webp"))) {
-                        imageFiles.add(f);
+                    if (includeWebpFiles) {
+                        if ((name.endsWith(".jpg") || name.endsWith(".jpeg") ||
+                                name.endsWith(".png") || name.endsWith(".webp"))) {
+                            imageFiles.add(f);
+                        }
+                    } else {
+                        if (name.endsWith(".jpg") || name.endsWith(".jpeg") ||
+                                name.endsWith(".png")) {
+                            imageFiles.add(f);
+                        }
                     }
                 } else if (processSubfolders && f.isDirectory()) {
                     subDirs.add(f);
@@ -532,21 +541,30 @@ public class Main extends Application {
 
             final long finalOutSize = outSize;
             final long saved = inSize - finalOutSize;
+
             totalMBSaved += saved / (1024 * 1024.0);
+            if(inSize<=0) {
+                totalPercentSaved = 0;
+            } else {
+                totalPercentSaved = ( totalBitesSaved / inSize ) * 100;
+            }
 
             double finalTotalMBSaved = totalMBSaved;
+            long finalTotalBitesSaved = totalBitesSaved;
             Platform.runLater(() -> {
                 String text = "Folder: " + inputDir.getName() +
                         "  |  Original: " + bytesToMiB(inSize) + " MiB" +
                         "  |  Final: " + bytesToMiB(finalOutSize) + " MiB" +
                         "  |  Δ: " + bytesToMiB(saved) + " MiB" +
-                        "  |  Total MB Saved: " + Double.toString(finalTotalMBSaved) + " MiB";
+                        "  |  Total MB Saved: " + String.format("%.2f", finalTotalMBSaved) + " MiB" +
+                        "  |  Total % Saved: " + String.format("%.1f%%", totalPercentSaved);
                 System.out.println(text);
             });
 
             System.out.println("Input folder size (direct files): " + bytesToMiB(inSize) + " MiB");
             System.out.println("Output folder size (direct outputs): " + bytesToMiB(finalOutSize) + " MiB");
-            System.out.println("Total MiB Saved: " + Double.toString(finalTotalMBSaved) + " MiB");
+            System.out.println("Total MiB Saved: " + String.format("%.2f", finalTotalMBSaved) + " MiB");
+            System.out.println("Total % Saved: " + String.format("%.1f%%", totalPercentSaved));
             System.out.println("*********************************************************");
 
             // --- Enqueue subfolders ---------------------------------------------
@@ -627,7 +645,7 @@ public class Main extends Application {
             final Image finalImg = img;
             Platform.runLater(() -> imageView.setImage(finalImg));
         } catch (IOException ex) {
-            System.err.println("Error showing preview: " + ex.getMessage());
+            System.err.println("Error generating preview: " + ex.getMessage());
         }
     }
 
