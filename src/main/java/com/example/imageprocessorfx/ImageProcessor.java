@@ -46,7 +46,10 @@ public class ImageProcessor {
         Process process = realesrganProcessBuilder.start();
         conversionProcessRef.set(process); // Update the process reference
         // Wait for the process to finish (optional if necessary)
-        process.waitFor();
+        int exitCode = process.waitFor();
+        if (exitCode != 0) {
+            throw new IOException("Upscale process failed for " + inputFile.getName() + " with exit code " + exitCode);
+        }
     }
 
     public void convertToWebP(File file, File outputFile, File compressedFile, AtomicReference<Process> conversionProcessRef, boolean upscalePicture, boolean excludePreEnhancedFiles) throws IOException, IOException, InterruptedException {
@@ -77,7 +80,10 @@ public class ImageProcessor {
         }
         Process process = cwebpProcessBuilder.start();
         conversionProcessRef.set(process); // Update the process reference
-        process.waitFor();
+        int exitCode = process.waitFor();
+        if (exitCode != 0) {
+            throw new IOException("WebP conversion failed for " + file.getName() + " with exit code " + exitCode);
+        }
     }
 
 }
