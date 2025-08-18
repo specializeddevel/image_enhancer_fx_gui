@@ -6,7 +6,6 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.text.Text;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import javafx.scene.Scene;
@@ -62,13 +61,12 @@ public class Main extends Application {
     private Image webpPlaceholderImage;
 
     private boolean deleteSourceFile = false;
-    private boolean includeWebpFiles = false;
     private boolean isDarkTheme = true;
 
     private int totalFoldersProcessed = 1;
-    private double totalMBSaved = 0;
-    private long totalBitesSaved = 0;
-    private double totalPercentSaved = 0;
+    private long totalInputBytes = 0;
+    private long totalOutputBytes = 0;
+    private long totalStartTime;
 
     // CSS paths for light and dark themes
     private String lightThemeCssPath;
@@ -322,7 +320,7 @@ public class Main extends Application {
                 isPaused.set(!isPaused.get()); // Alternate between pause and resumption
                 pauseProcessButton.setText(isPaused.get() ? "Continue" : "Pause");
                 closeButton.setDisable(isPaused.get());
-                System.out.println(isPaused.get()
+                System.out.println(isPaused.get() 
                         ? "Paused process"
                         : "Resumed process");
             }
@@ -420,16 +418,31 @@ public class Main extends Application {
             return;
         }
         initControls();
+        totalStartTime = System.currentTimeMillis(); // Record start time
         // Processing in a separate thread
         new Thread(() -> {
+            boolean errorOccurred = false;
             try {
                 processFolder(inputDir, new File(outputFolder), model, processSubfolders);
-                UIHandler.showAlert(Alert.AlertType.INFORMATION, "Process finished", "Processing finished!");
             } catch (IOException | InterruptedException e) {
+                errorOccurred = true;
                 e.printStackTrace();
-                UIHandler.showAlert(Alert.AlertType.ERROR, "Error", "An error occurred while processing files.");
+            } finally {
+                long totalElapsedTime = System.currentTimeMillis() - totalStartTime;
+                String totalTimeStr = formatDuration(totalElapsedTime);
+
+                final boolean finalErrorOccurred = errorOccurred;
+                Platform.runLater(() -> {
+                    if (finalErrorOccurred) {
+                        UIHandler.showAlert(Alert.AlertType.ERROR, "Error", "An error occurred. Total time: " + totalTimeStr);
+                    } else if (!flag) { // Canceled by button
+                        textCurrentFile.setText("Process cancelled. Total time: " + totalTimeStr);
+                    } else { // Normal completion
+                        UIHandler.showAlert(Alert.AlertType.INFORMATION, "Process Finished", "Processing finished!\nTotal time: " + totalTimeStr);
+                    }
+                    enableControls();
+                });
             }
-            Platform.runLater(() -> enableControls());
         }).start();
     }
 
@@ -439,12 +452,14 @@ public class Main extends Application {
         String currentDir = System.getProperty("user.dir");
         boolean convertToWebp   = convertToWebpCheckBox.isSelected();
         boolean upscalePicture  = upsaceleCheckBox.isSelected();
+        boolean includeWebp     = includeWebpFilesCheckBox.isSelected();
 
         // Queue that save pairs (carpetaEntrada , carpetaSalida)
         Queue<Pair<File, File>> queue = new LinkedList<>();
         queue.add(new Pair<>(rootInput, rootOutput));
 
         while (!queue.isEmpty()) {
+            long folderStartTime = System.currentTimeMillis(); // Start folder timer
             Pair<File, File> pair = queue.poll();
             File inputDir  = pair.getKey();
             File outputDir = pair.getValue();
@@ -465,7 +480,7 @@ public class Main extends Application {
             for (File f : files) {
                 if (f.isFile()) {
                     String name = f.getName().toLowerCase();
-                    if (includeWebpFiles) {
+                    if (includeWebp) {
                         if ((name.endsWith(".jpg") || name.endsWith(".jpeg") ||
                                 name.endsWith(".png") || name.endsWith(".webp"))) {
                             imageFiles.add(f);
@@ -481,15 +496,8 @@ public class Main extends Application {
                 }
             }
 
-            // Compute input size only for files directly in this folder that will be processed
-            List<File> processedFiles = new ArrayList<>();
-            boolean includeWebpLocal = includeWebpFilesCheckBox.isSelected();
-            for (File f : imageFiles) {
-                String lower = f.getName().toLowerCase();
-                boolean include = includeWebpLocal || !lower.endsWith(".webp");
-                if (include) processedFiles.add(f);
-            }
-            final long inSize = processedFiles.stream().mapToLong(File::length).sum();
+            // Compute input size for all files that will be processed in this folder
+            final long inSize = imageFiles.stream().mapToLong(File::length).sum();
 
             // --- Update UI ----------------------------------------------------
             Platform.runLater(() -> {
@@ -498,7 +506,6 @@ public class Main extends Application {
                         FileManager.openFolder(inputDir.getAbsolutePath()));
                 showDestinationFolderButton.setOnAction(e ->
                         FileManager.openFolder(outputDir.getAbsolutePath()));
-                System.out.println("Folder size (direct files only): " + bytesToMiB(inSize) + " MiB  |  Name: " + inputDir.getName());
             });
             // --- Process files -------------------------------------------------
             int totalFiles = imageFiles.size();
@@ -528,10 +535,10 @@ public class Main extends Application {
 
             // --- Folder resume -----------------------------------------------
             long outSize = 0L;
-            for (File src : processedFiles) {
+            for (File src : imageFiles) { // Use imageFiles which is the correct list
                 String base = src.getName();
-                File webp = new File(outputDir, base.replaceFirst("\\.[^.]+$", "_final.webp"));
-                File improved = new File(outputDir, base.replaceFirst("\\.[^.]+$", "_improved.png"));
+                File webp = new File(outputDir, base.replaceFirst("\\.[^.]*$", "_final.webp"));
+                File improved = new File(outputDir, base.replaceFirst("\\.[^.]*$", "_improved.png"));
                 if (convertToWebp && webp.exists()) {
                     outSize += webp.length();
                 } else if (improved.exists()) {
@@ -542,30 +549,52 @@ public class Main extends Application {
             final long finalOutSize = outSize;
             final long saved = inSize - finalOutSize;
 
-            totalMBSaved += saved / (1024 * 1024.0);
-            if(inSize<=0) {
-                totalPercentSaved = 0;
-            } else {
-                totalPercentSaved = ( totalBitesSaved / inSize ) * 100;
-            }
+            // Update total counters
+            totalInputBytes += inSize;
+            totalOutputBytes += outSize;
 
-            double finalTotalMBSaved = totalMBSaved;
-            long finalTotalBitesSaved = totalBitesSaved;
             Platform.runLater(() -> {
-                String text = "Folder: " + inputDir.getName() +
-                        "  |  Original: " + bytesToMiB(inSize) + " MiB" +
-                        "  |  Final: " + bytesToMiB(finalOutSize) + " MiB" +
-                        "  |  Δ: " + bytesToMiB(saved) + " MiB" +
-                        "  |  Total MB Saved: " + String.format("%.2f", finalTotalMBSaved) + " MiB" +
-                        "  |  Total % Saved: " + String.format("%.1f%%", totalPercentSaved);
-                System.out.println(text);
-            });
+                long folderElapsedTime = System.currentTimeMillis() - folderStartTime;
+                long totalElapsedTime = System.currentTimeMillis() - totalStartTime;
 
-            System.out.println("Input folder size (direct files): " + bytesToMiB(inSize) + " MiB");
-            System.out.println("Output folder size (direct outputs): " + bytesToMiB(finalOutSize) + " MiB");
-            System.out.println("Total MiB Saved: " + String.format("%.2f", finalTotalMBSaved) + " MiB");
-            System.out.println("Total % Saved: " + String.format("%.1f%%", totalPercentSaved));
-            System.out.println("*********************************************************");
+                // --- Calculations ---
+                double totalMBSavedNow = (double)(totalInputBytes - totalOutputBytes) / (1024.0 * 1024.0);
+                double totalPercentSavedNow = (totalInputBytes > 0)
+                        ? ((double)(totalInputBytes - totalOutputBytes) / totalInputBytes) * 100.0
+                        : 0.0;
+                double deltaPercent = (inSize > 0) ? ((double)saved / inSize) * 100.0 : 0.0;
+                String totalMBProcessedStr = bytesToMiB(totalInputBytes);
+
+                // --- Building the output string ---
+                StringBuilder sb = new StringBuilder();
+                sb.append("*********************************************************");
+                sb.append("\n");
+                sb.append("📂 Folder: ").append(inputDir.getName());
+                sb.append("\n");
+                sb.append("⏱️ Folder Time: ").append(formatDuration(folderElapsedTime));
+                sb.append("\n");
+                sb.append("---------------------------------------------------------");
+                sb.append("\n");
+                sb.append("- 📦 Original Size: ").append(bytesToMiB(inSize)).append(" MiB");
+                sb.append("\n");
+                sb.append("- ✨ Final Size:    ").append(bytesToMiB(finalOutSize)).append(" MiB");
+                sb.append("\n");
+                sb.append("- 💾 Saved (Δ):     ").append(bytesToMiB(saved)).append(" MiB (")
+                  .append(String.format("%.1f", deltaPercent)).append("%)");
+                sb.append("\n");
+                sb.append("=========================================================");
+                sb.append("\n");
+                sb.append("- 🗂️ Total Processed: ").append(totalMBProcessedStr).append(" MiB");
+                sb.append("\n");
+                sb.append("- 📉 Total Saved:     ").append(String.format("%.2f", totalMBSavedNow)).append(" MiB (").append(String.format("%.1f", totalPercentSavedNow)).append("%)");
+                sb.append("\n");
+                sb.append("- ⏳ Total Time:      ").append(formatDuration(totalElapsedTime));
+                sb.append("\n");
+                sb.append("*********************************************************");
+                sb.append("\n");
+
+                System.out.println(sb.toString());
+            });
 
             // --- Enqueue subfolders ---------------------------------------------
             if (processSubfolders) {
@@ -585,11 +614,6 @@ public class Main extends Application {
                                    String currentDir, String model,
                                    boolean convertToWebp, boolean upscalePicture)
             throws IOException, InterruptedException {
-
-        includeWebpFiles = includeWebpFilesCheckBox.isSelected()
-                || !file.getName().toLowerCase().endsWith("webp");
-
-        if (!includeWebpFiles) return;
 
         File outputFile   = new File(outputDir,
                 file.getName().replaceFirst("\\.[^.]+$", "_improved.png"));
@@ -674,6 +698,13 @@ public class Main extends Application {
         }
     }
 
+    private String formatDuration(long millis) {
+        long seconds = (millis / 1000) % 60;
+        long minutes = (millis / (1000 * 60)) % 60;
+        long hours = (millis / (1000 * 60 * 60));
+        return String.format("%02d:%02d:%02d", hours, minutes, seconds);
+    }
+
     private long folderSize(File dir) {
         if (!dir.isDirectory()) return 0L;
         long len = 0;
@@ -682,7 +713,7 @@ public class Main extends Application {
             for (File f : fs) {
                 if (f.isFile()) {
                     len += f.length();
-                } else if (f.isDirectory()
+                } else if (f.isDirectory() 
                         && subfoldersCheckBox.isSelected()) {  // <- use the check
                     len += folderSize(f);
                 }
@@ -741,6 +772,7 @@ public class Main extends Application {
         // Show the progress bar
         progressBar.setVisible(true);
         progressBar.setProgress(0);
-        totalMBSaved = 0;
+        totalInputBytes = 0;
+        totalOutputBytes = 0;
     }
 }
