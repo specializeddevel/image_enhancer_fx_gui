@@ -402,19 +402,20 @@ public class Main extends Application {
     }
 
     private void processFiles() {
+        final String errorTitle = "Error";
         String inputFolder = inputFolderField.getText();
         String outputFolder = outputFolderField.getText();
         String model = modelComboBox.getValue();
         boolean processSubfolders = subfoldersCheckBox.isSelected();
 
         if (inputFolder.isEmpty() || outputFolder.isEmpty()) {
-            UIHandler.showAlert(Alert.AlertType.ERROR, "Error", "Please select both input and output folders.");
+            UIHandler.showAlert(Alert.AlertType.ERROR, errorTitle, "Please select both input and output folders.");
             return;
         }
 
         File inputDir = new File(inputFolder);
         if (!inputDir.exists() || !inputDir.isDirectory()) {
-            UIHandler.showAlert(Alert.AlertType.ERROR, "Error", "Input folder is not valid.");
+            UIHandler.showAlert(Alert.AlertType.ERROR, errorTitle, "Input folder is not valid.");
             return;
         }
         initControls();
@@ -434,7 +435,7 @@ public class Main extends Application {
                 final boolean finalErrorOccurred = errorOccurred;
                 Platform.runLater(() -> {
                     if (finalErrorOccurred) {
-                        UIHandler.showAlert(Alert.AlertType.ERROR, "Error", "An error occurred. Total time: " + totalTimeStr);
+                        UIHandler.showAlert(Alert.AlertType.ERROR, errorTitle, "An error occurred. Total time: " + totalTimeStr);
                     } else if (!flag) { // Canceled by button
                         textCurrentFile.setText("Process cancelled. Total time: " + totalTimeStr);
                     } else { // Normal completion
